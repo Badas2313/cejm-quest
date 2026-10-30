@@ -34,8 +34,10 @@ p{margin:0}
 /* ---------- Carte ---------- */
 #stage{position:fixed;inset:0;overflow:hidden;background:radial-gradient(120% 70% at 50% -10%,#16204A 0%,#0A0F25 45%,var(--night) 75%);touch-action:none;cursor:grab}
 #stage.drag{cursor:grabbing}
-#world{position:absolute;left:0;top:0;width:1760px;height:1080px;transform-origin:0 0;will-change:transform}
-#world svg{display:block;width:1760px;height:1080px;overflow:visible}
+#world{position:absolute;left:0;top:0;width:2112px;height:1180px;transform-origin:0 0;will-change:transform}
+#world>canvas,#cityfb>svg,#ov>svg{position:absolute;left:0;top:0;width:2112px;height:1180px;display:block}
+#ov>svg{overflow:visible}
+#stage::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(130% 105% at 50% 46%,transparent 56%,rgba(3,5,12,.72))}
 .b .wl,.b .wr{pointer-events:none}
 .b .ft{stroke-linejoin:round}
 .hit{cursor:pointer}
@@ -66,14 +68,16 @@ p{margin:0}
 #hud{position:fixed;inset:0;pointer-events:none;z-index:10}
 #hud>*{pointer-events:auto}
 .card{background:rgba(13,19,40,.86);border:1px solid var(--rule);border-radius:var(--r);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.hud-player{position:absolute;left:14px;top:14px;display:flex;gap:12px;align-items:center;padding:8px 14px 8px 8px;min-width:230px;border:1px solid var(--rule)}
+.hud-left{position:absolute;left:14px;top:14px;display:grid;gap:8px;justify-items:start}
+.hud-player{display:flex;gap:12px;align-items:center;padding:8px 14px 8px 8px;min-width:230px;border:1px solid var(--rule)}
 .hud-player .who{flex:1;min-width:0}
 .hud-player .nm{font-family:var(--f-display);font-weight:800;font-size:1.25rem;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lvl{font-family:var(--f-mono);font-size:.68rem;color:var(--sodium);letter-spacing:.08em}
 .bar{height:6px;border-radius:6px;background:#202A52;overflow:hidden;margin-top:6px}
 .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--sodium),#FFD58C);border-radius:6px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
 .xpt{font-family:var(--f-mono);font-size:.66rem;color:var(--fog);margin-top:3px}
-.hud-obj{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:9px 16px;max-width:min(560px,calc(100% - 560px));font-size:.88rem;border-color:#3A3420}
+.hud-obj{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:11px 18px;max-width:min(640px,calc(100% - 340px));font-size:.9rem;border-color:#5A4520;box-shadow:0 0 0 1px rgba(255,181,71,.12),0 12px 30px rgba(0,0,0,.45)}
+.hud-obj:hover{border-color:var(--sodium)}
 .hud-obj b{color:var(--sodium);font-family:var(--f-mono);font-size:.66rem;letter-spacing:.14em}
 .hud-obj span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hud-right{position:absolute;right:14px;top:14px;display:flex;gap:10px;align-items:stretch}
@@ -88,14 +92,21 @@ p{margin:0}
 .hud-tools{position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;gap:8px}
 .tbtn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(13,19,40,.88);border:1px solid var(--rule);color:var(--paper);font-size:1.1rem}
 .tbtn:hover{border-color:var(--sodium);color:var(--sodium)}
-.hud-phare{position:absolute;left:14px;bottom:14px;display:flex;gap:10px;align-items:center;padding:8px 14px 8px 8px;cursor:pointer;border-color:#4A3A1A}
-.hud-phare .ttl{font-family:var(--f-display);font-weight:800;font-size:1.05rem;line-height:1}
-.hud-phare small{display:block;color:var(--fog);font-size:.74rem}
+.hud-phare{display:flex;gap:10px;align-items:center;padding:8px 14px;cursor:pointer;border-color:#4A3A1A;text-align:left}
+.hud-phare .ico{color:var(--sodium);width:22px;height:22px}
+.hud-phare b{display:block;font-family:var(--f-display);font-weight:800;font-size:1.05rem;line-height:1;letter-spacing:.02em}
+.hud-phare small{display:block;color:var(--fog);font-size:.72rem}
+.hud-phare:hover{border-color:var(--sodium)}
+.tbtn.tphare{display:none}
+.hud-mentor{position:absolute;left:14px;bottom:12px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:0;font-family:var(--f-mono);font-size:.6rem;letter-spacing:.12em;color:#FFD58C}
+.hud-mentor svg{width:58px;height:58px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.55));transition:transform .2s}
+.hud-mentor:hover svg{transform:translateY(-3px) scale(1.04)}
+.hud-mentor span{background:rgba(13,19,40,.88);padding:2px 7px;border-radius:20px;border:1px solid #4A3A1A}
 .hint-bar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);font-size:.78rem;color:var(--fog);padding:6px 14px;border-radius:30px;white-space:nowrap}
 .legend{position:absolute;left:50%;top:62px;transform:translateX(-50%);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;pointer-events:auto}
 
 /* ---------- Panneau quartier ---------- */
-.panel{position:fixed;z-index:12;top:96px;right:14px;width:min(400px,calc(100% - 28px));max-height:calc(100% - 170px);overflow:auto;padding:20px;transform:translateX(calc(100% + 30px));transition:transform .45s cubic-bezier(.2,.8,.2,1);border-top:4px solid var(--k,var(--sodium))}
+.panel{position:fixed;z-index:12;top:104px;right:14px;width:min(400px,calc(100% - 28px));max-height:calc(100% - 170px);overflow:auto;padding:20px;transform:translateX(calc(100% + 30px));transition:transform .45s cubic-bezier(.2,.8,.2,1);border-top:4px solid var(--k,var(--sodium))}
 .panel.open{transform:none}
 .panel .x{position:absolute;right:10px;top:10px}
 .linebadge{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;color:var(--k);font-weight:700}
@@ -373,7 +384,7 @@ table.rel td.n{font-family:var(--f-mono);text-align:center}
 .swatches button.on{border-color:var(--paper);box-shadow:0 0 0 3px rgba(255,255,255,.15)}
 
 /* ---------- Juno, toasts, dialogues ---------- */
-#juno{position:fixed;z-index:15;left:14px;bottom:84px;max-width:min(380px,calc(100% - 28px));display:none}
+#juno{position:fixed;z-index:15;left:14px;bottom:96px;max-width:min(380px,calc(100% - 28px));display:none}
 #juno.open{display:block;animation:rise .3s}
 .bubble{display:flex;gap:12px;padding:12px 14px;border-color:#4A3A1A}
 .bubble svg{width:44px;height:44px;flex:none}
@@ -397,7 +408,11 @@ table.rel td.n{font-family:var(--f-mono);text-align:center}
 
 /* ---------- Mobile ---------- */
 @media (max-width:760px){
-  .hud-obj{top:auto;bottom:70px;max-width:calc(100% - 28px);font-size:.8rem}
+  .hud-obj{top:76px;bottom:auto;left:14px;right:14px;transform:none;max-width:none;font-size:.8rem;padding:8px 12px}
+  .hud-phare{display:none}
+  .tbtn.tphare{display:grid}
+  .saved{display:none}
+  .hud-mentor svg{width:48px;height:48px}
   .hud-player{min-width:0;padding:6px 10px 6px 6px}
   .hud-player .nm{font-size:1.05rem}
   .city{min-width:110px;padding:6px 10px}
@@ -406,8 +421,6 @@ table.rel td.n{font-family:var(--f-mono);text-align:center}
   .hud-right .city .row span{display:none}
   .saved{top:64px}
   .hint-bar{display:none}
-  .hud-phare{bottom:14px}
-  .hud-phare small{display:none}
   .panel{top:auto;bottom:0;right:0;left:0;width:100%;max-height:68%;border-radius:18px 18px 0 0;transform:translateY(105%)}
   .panel.open{transform:none}
   .panel h2{font-size:2rem}
@@ -421,11 +434,45 @@ table.rel td.n{font-family:var(--f-mono);text-align:center}
   .docs{border-right:0;border-bottom:1px solid var(--rule)}
   .archs{grid-template-columns:1fr}
   .linewrap{padding:16px}
-  #juno{bottom:120px}
+  #juno{bottom:86px}
+  .hud-tools{gap:6px}
+  .tbtn{width:40px;height:40px}
 }
-@media (max-width:1100px) and (min-width:761px){.hud-obj{top:auto;bottom:16px}.hint-bar{display:none}}
+@media (max-width:1100px) and (min-width:761px){.hud-obj{max-width:calc(100% - 300px)}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
 body.reduced *{animation:none!important;transition:none!important}
+
+/* ---------- enseignes et animations de la ville ---------- */
+.sign .sg{fill:rgba(7,10,24,.93);stroke:var(--c);stroke-width:1.6}
+.sign .sgl{fill:none;stroke:var(--c);stroke-width:10;opacity:.14;transition:opacity .25s}
+.sign.lib .sgl{opacity:.4}
+.hit:hover .sgl,.hit:focus .sgl{opacity:.62}
+.sign .sgt{font-family:var(--f-display);font-weight:800;font-size:22px;letter-spacing:.06em;fill:var(--c)}
+.sign .sgn{font-family:var(--f-display);font-weight:900;font-size:16px;fill:#071022}
+.sign .sgp{font-family:var(--f-mono);font-weight:700;font-size:12px;fill:#EEF1F8;letter-spacing:.04em}
+.train{animation:train 3.4s linear infinite}
+@keyframes train{from{stroke-dashoffset:618}to{stroke-dashoffset:0}}
+.smoke{animation:smoke 4s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes smoke{0%{opacity:0;transform:translate(0,0) scale(.5)}20%{opacity:.45}100%{opacity:0;transform:translate(16px,-50px) scale(1.9)}}
+.flash{animation:flash 1.6s ease-out forwards;transform-box:fill-box;transform-origin:center;pointer-events:none}
+@keyframes flash{0%{opacity:1;transform:scale(.25)}100%{opacity:0;transform:scale(1.7)}}
+#line .linesvg{background-image:radial-gradient(rgba(140,160,220,.13) 1px,transparent 1.2px);background-size:26px 26px;border-radius:18px}
+.npc svg{border-radius:50%}
+
+@media (max-width:760px){
+  .hud-player{max-width:calc(100vw - 214px);padding:6px 10px 6px 6px;gap:8px}
+  .hud-player svg{width:36px;height:36px}
+  .hud-player .nm{font-size:1rem}
+  .hud-player .xpt{display:none}
+  .hud-player .bar{margin-top:4px}
+  .lvl{font-size:.58rem}
+  .city{min-width:92px}
+  .stat{font-size:.85rem}
+  .hud-obj{top:68px}
+}
+
+.bosshead .btn{align-self:flex-start}
+#toasts .toast:nth-last-child(n+4){display:none}
 </style>
 </head>
 <body>
@@ -2603,7 +2650,7 @@ function nextObjective() {
 }
 
 /* ---------- portraits ---------- */
-const SKIN = { cap: '#E9B48C', badge: '#8D5A3B', goggles: '#F2C9A5', hood: '#C68E62', helmet: '#B97E55', glasses: '#F0C7A4', juno: '#D9A57E' };
+const SKIN = { cano: '#E2B08C', cap: '#E9B48C', badge: '#8D5A3B', goggles: '#F2C9A5', hood: '#C68E62', helmet: '#B97E55', glasses: '#F0C7A4', juno: '#D9A57E' };
 function portrait(look, color, boss) {
   const bg = mix(color, '#0B1124', 0.72);
   if (boss) return `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="#1A0B14" stroke="#FF3355" stroke-width="2"/><path d="M8 64c3-17 45-17 48 0z" fill="#25101C"/><circle cx="32" cy="28" r="13" fill="#2B1422"/><path d="M15 21h34l-4-9H19z" fill="#120810"/><rect x="21" y="25" width="22" height="5" rx="2.5" fill="#FF3355" class="blink"/><path d="M32 48a5 5 0 1 0 0-.1" fill="none" stroke="#FF3355" stroke-width="1.6"/></svg>`;
@@ -2614,164 +2661,275 @@ function portrait(look, color, boss) {
   if (look === 'hood') extra = `<path d="M15 34c-2-20 36-20 34 0-3-10-31-10-34 0z" fill="#132033"/><rect x="22" y="25" width="20" height="3.5" rx="1.7" fill="${color}"/>`;
   if (look === 'helmet') extra = `<path d="M19 22c0-11 26-11 26 0z" fill="#F7D44C"/><rect x="16" y="21" width="32" height="3.6" rx="1.8" fill="#E2BB2E"/>`;
   if (look === 'glasses') extra = `<path d="M18 30c-3-17 31-17 28 0l2 14c-4-8-6-12-8-14H24c-2 2-4 6-8 14z" fill="#3A1F2A"/><circle cx="27" cy="28" r="4" fill="none" stroke="#111" stroke-width="1.6"/><circle cx="37" cy="28" r="4" fill="none" stroke="#111" stroke-width="1.6"/>`;
+  if (look === 'cano') extra = `<path d="M17 30c-3-17 32-17 30 0-3-8-27-8-30 0z" fill="#2B1A14"/><circle cx="32" cy="13" r="6" fill="#2B1A14"/><path d="M24 40l8 6 8-6" fill="none" stroke="#FFF4DC" stroke-width="2.2" stroke-linejoin="round"/><circle cx="20" cy="31.5" r="1.8" fill="#FFD58C"/><circle cx="44" cy="31.5" r="1.8" fill="#FFD58C"/>`;
   if (look === 'juno') extra = `<path d="M19 25c-1-11 27-11 26 0-5-5-21-5-26 0z" fill="#22283F"/><path d="M17 28a15 15 0 0 1 30 0" fill="none" stroke="#FFB547" stroke-width="2.4"/><circle cx="17" cy="29" r="3" fill="#FFB547"/>`;
   return `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="${bg}" stroke="${color}" stroke-width="2"/><path d="M9 64c3-16 43-16 46 0z" fill="${mix(color, '#0B1124', 0.4)}"/><rect x="28" y="36" width="8" height="8" fill="${s}"/><circle cx="32" cy="28" r="12" fill="${s}"/><circle cx="27.5" cy="28.5" r="1.4" fill="#151515"/><circle cx="36.5" cy="28.5" r="1.4" fill="#151515"/><path d="M28.5 33.5q3.5 2 7 0" stroke="#5A2E1E" stroke-width="1.3" fill="none" stroke-linecap="round"/>${extra}</svg>`;
 }
 const avatar = () => { const p = S.player || { arch: 'eco', color: '#FFB547' }; return `<svg viewBox="0 0 48 48" width="46" height="46"><path d="M24 2l19 11v22L24 46 5 35V13z" fill="${mix(p.color, '#0B1124', 0.7)}" stroke="${p.color}" stroke-width="2"/><g transform="translate(12 12)" fill="none" stroke="${p.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[ARCH[p.arch][1]]}</g></svg>`; };
-const JUNO = () => portrait('juno', '#FFB547');
+const MENTOR = 'Madame Cano';
+const CANO = () => portrait('cano', '#FFB547');
 
 /* ---------- carte isométrique ---------- */
-const VW = 1760, VH = 1080, HW = 32, HH = 16, TOUR = [896, 576], PHARE = [160, 944];
+const VW = 2112, VH = 1180, HW = 32, HH = 16, TOUR = [1088, 656], PHARE = [320, 944];
+const POS = { d1: [576, 832], d2: [576, 480], d3: [1088, 336], d4: [1600, 480], d5: [1600, 832], d6: [1088, 1008] };
+D.forEach(d => { if (POS[d.id]) d.pos = POS[d.id]; });
+const coastY = x => 754 + 0.5 * x;
 const iso = (gx, gy) => [(gx - gy) * HW, (gx + gy) * HH];
-function box(cx, cy, gx, gy, w, d, h, cls, attrs, z) {
-  z = z || 0; const P = (x, y, up) => { const p = iso(x, y); return (cx + p[0]) + ',' + (cy + p[1] - up); };
-  const top = [P(gx, gy, z + h), P(gx + w, gy, z + h), P(gx + w, gy + d, z + h), P(gx, gy + d, z + h)].join(' ');
-  const left = [P(gx, gy + d, z), P(gx + w, gy + d, z), P(gx + w, gy + d, z + h), P(gx, gy + d, z + h)].join(' ');
-  const right = [P(gx + w, gy + d, z), P(gx + w, gy, z), P(gx + w, gy, z + h), P(gx + w, gy + d, z + h)].join(' ');
-  return { depth: cy + (gx + gy + w + d) * HH + z * 0.01, svg: `<g class="b ${cls}" ${attrs || ''}><polygon class="fl" points="${left}"/><polygon class="wl" points="${left}"/><polygon class="fr" points="${right}"/><polygon class="wr" points="${right}"/><polygon class="ft" points="${top}"/></g>` };
+function faces(cx, cy, gx, gy, w, d, h, z) {
+  z = z || 0; const P = (x, y, up) => { const p = iso(x, y); return (cx + p[0]).toFixed(1) + ',' + (cy + p[1] - up).toFixed(1); };
+  return {
+    top: [P(gx, gy, z + h), P(gx + w, gy, z + h), P(gx + w, gy + d, z + h), P(gx, gy + d, z + h)].join(' '),
+    left: [P(gx, gy + d, z), P(gx + w, gy + d, z), P(gx + w, gy + d, z + h), P(gx, gy + d, z + h)].join(' '),
+    right: [P(gx + w, gy + d, z), P(gx + w, gy, z), P(gx + w, gy, z + h), P(gx + w, gy + d, z + h)].join(' '),
+    depth: cy + (gx + gy + w + d) * HH + z * 0.01
+  };
 }
+function box(cx, cy, gx, gy, w, d, h, cls, z, more) { const f = faces(cx, cy, gx, gy, w, d, h, z); return { depth: f.depth, svg: `<g class="b ${cls}"><polygon class="fl" points="${f.left}"/><polygon class="wl" points="${f.left}"/><polygon class="fr" points="${f.right}"/><polygon class="wr" points="${f.right}"/><polygon class="ft" points="${f.top}"/></g>${more || ''}` }; }
+function solid(cx, cy, gx, gy, w, d, h, col, z, more) { const f = faces(cx, cy, gx, gy, w, d, h, z); return { depth: f.depth, svg: `<polygon points="${f.left}" fill="${mix(col, '#000000', 0.42)}"/><polygon points="${f.right}" fill="${mix(col, '#000000', 0.62)}"/><polygon points="${f.top}" fill="${col}"/>${more || ''}` }; }
+const topC = (cx, cy, gx, gy, w, d, h) => { const p = iso(gx + w / 2, gy + d / 2); return [cx + p[0], cy + p[1] - h]; };
 function pat(id, skew, seed, fn) { const r = rng(seed); let s = ''; for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { const c = fn(r); if (c) s += `<rect x="${i * 16 + 4}" y="${j * 16 + 4}" width="8" height="9" fill="${c[0]}" opacity="${c[1].toFixed(2)}"/>`; } return `<pattern id="${id}" patternUnits="userSpaceOnUse" width="128" height="128" patternTransform="skewY(${skew})">${s}</pattern>`; }
 const SLOTS = [[-2, 0], [0, -2], [2, 0], [0, 2], [2, 2]];
-function isoPath(a, b) { const dx = b[0] - a[0], dy = b[1] - a[1]; const ga = (dx / 32 + dy / 16) / 2, gb = (dy / 16 - dx / 32) / 2; const p1 = [a[0] - gb * 32, a[1] + gb * 16]; return [a, p1, b]; }
-function buildMap() {
+function isoPath(a, b) { const dx = b[0] - a[0], dy = b[1] - a[1]; const gb = (dy / 16 - dx / 32) / 2; return [a, [a[0] - gb * 32, a[1] + gb * 16], b]; }
+const HEIGHTS = {}; D.forEach((d, di) => { const r = rng(100 + di * 13); HEIGHTS[d.id] = d.missions.map(() => 80 + Math.round(r() * 3) * 16); });
+const LINES = () => D.map(d => ({ d, pts: isoPath(TOUR, d.pos) })).concat([{ d: null, pts: isoPath(PHARE, D[0].pos) }]);
+let FILL = null;
+function fillers() {
+  if (FILL) return FILL; FILL = [];
+  const r = rng(2026), segs = [];
+  LINES().forEach(l => segs.push([l.pts[0], l.pts[1]], [l.pts[1], l.pts[2]]));
+  const dseg = (p, a, b) => { const vx = b[0] - a[0], vy = b[1] - a[1], wx = p[0] - a[0], wy = p[1] - a[1]; const t = clamp((vx * wx + vy * wy) / (vx * vx + vy * vy || 1), 0, 1); return Math.hypot(wx - t * vx, wy - t * vy); };
+  for (let u = -4; u <= 70; u += 2.5) for (let v = 2; v <= 80; v += 2.5) {
+    const gx = Math.round((u + v) / 2 * 2) / 2 + (r() < 0.5 ? 0.5 : 0), gy = Math.round((v - u) / 2 * 2) / 2;
+    const [x, y] = iso(gx, gy);
+    if (x < -60 || x > VW + 40 || y < 30 || y > VH + 40) continue;
+    if (y > coastY(x) - 34) continue;
+    const dm = Math.min(...D.map(d => { const dy = y - d.pos[1] + 10; return Math.abs(x - d.pos[0]) / 300 + (dy > 0 ? dy / 175 : -dy / 140); }));
+    if (dm < 1) continue;
+    const tm = Math.abs(x - TOUR[0]) / 170 + Math.abs(y - TOUR[1]) / 92;
+    if (tm < 1) continue;
+    if (Math.hypot(x - PHARE[0], (y - PHARE[1]) * 1.6) < 120) continue;
+    if (segs.some(s => dseg([x, y + 14], s[0], s[1]) < 30)) continue;
+    if (r() < 0.18) continue;
+    const w = r() < 0.5 ? 1 : 1.5, dd = r() < 0.5 ? 1 : 1.5; let h = 32 + Math.floor(r() * 5) * 16; if (dm < 1.8) h = Math.min(h, 48); if (tm < 1.6) h = Math.min(h, 64);
+    FILL.push({ gx, gy, w, d: dd, h, roof: r() < 0.4 ? (r() < 0.5 ? 'tank' : 'unit') : null });
+  }
+  return FILL;
+}
+/* bâtiments repères */
+function crane(cx, cy, sx, sy, accent) {
+  const b = solid(cx, cy, sx + 0.375, sy + 0.375, 0.25, 0.25, 214, '#8E9AC0');
+  const t = topC(cx, cy, sx + 0.375, sy + 0.375, 0.25, 0.25, 214);
+  const tip = [t[0] - 32 * 4.5, t[1] + 16 * 4.5], back = [t[0] + 32 * 1.6, t[1] - 16 * 1.6];
+  return { depth: b.depth, svg: b.svg + `<line x1="${t[0]}" y1="${t[1]}" x2="${t[0]}" y2="${t[1] - 28}" stroke="#8E9AC0" stroke-width="3"/><line x1="${t[0]}" y1="${t[1] - 28}" x2="${tip[0]}" y2="${tip[1]}" stroke="#8E9AC0" stroke-width="1.5"/><line x1="${t[0]}" y1="${t[1] - 28}" x2="${back[0]}" y2="${back[1]}" stroke="#8E9AC0" stroke-width="1.5"/><line x1="${back[0]}" y1="${back[1]}" x2="${tip[0]}" y2="${tip[1]}" stroke="${accent}" stroke-width="5" stroke-linecap="round"/><rect x="${back[0] - 9}" y="${back[1] - 3}" width="18" height="12" fill="#4A5580"/><line x1="${tip[0] + 8}" y1="${tip[1] - 3}" x2="${tip[0] + 8}" y2="${tip[1] + 66}" stroke="#C9CFE6" stroke-width="1.3"/><rect x="${tip[0] - 6}" y="${tip[1] + 66}" width="28" height="12" rx="1" fill="#FF8A3D"/>` };
+}
+function containers(cx, cy, sx, sy) {
+  const c = ['#2F8FE0', '#E8742C', '#8FC12E', '#E26C93', '#7D62E0', '#1FB89F'];
+  return [solid(cx, cy, sx - 0.25, sy, 0.5, 1, 14, c[0]), solid(cx, cy, sx + 0.25, sy, 0.5, 1, 14, c[1]), solid(cx, cy, sx + 0.75, sy, 0.5, 1, 14, c[2]), solid(cx, cy, sx - 0.25, sy, 0.5, 1, 14, c[3], 14), solid(cx, cy, sx + 0.25, sy, 0.5, 1, 14, c[4], 14), solid(cx, cy, sx - 0.25, sy, 0.5, 1, 14, c[5], 28)];
+}
+function chimney(cx, cy, gx, gy, accent) { const b = solid(cx, cy, gx, gy, 0.5, 0.5, 204, '#3B2C36'); return { depth: b.depth, svg: b.svg + solid(cx, cy, gx, gy, 0.5, 0.5, 14, accent, 188).svg + solid(cx, cy, gx, gy, 0.5, 0.5, 8, accent, 150).svg }; }
+function dish(cx, cy, sx, sy, accent) { const t = topC(cx, cy, sx, sy, 1, 1, 24); return `<line x1="${t[0]}" y1="${t[1]}" x2="${t[0]}" y2="${t[1] - 20}" stroke="#AEB8D8" stroke-width="3"/><ellipse cx="${t[0] - 4}" cy="${t[1] - 32}" rx="28" ry="15" transform="rotate(-24 ${t[0] - 4} ${t[1] - 32})" fill="#18203F" stroke="${accent}" stroke-width="3"/><line x1="${t[0] - 4}" y1="${t[1] - 32}" x2="${t[0] + 14}" y2="${t[1] - 52}" stroke="#AEB8D8" stroke-width="1.5"/><circle cx="${t[0] + 14}" cy="${t[1] - 52}" r="3" fill="${accent}"/>`; }
+function saw(cx, cy, sx, sy, h, accent) { let s = ''; for (let k = 0; k < 3; k++) { const a = iso(sx + k / 3, sy + 0.5), b = iso(sx + (k + 1) / 3, sy + 0.5); s += `<polygon points="${cx + a[0]},${cy + a[1] - h} ${cx + a[0]},${cy + a[1] - h - 13} ${cx + b[0]},${cy + b[1] - h}" fill="${accent}" opacity=".9"/>`; } return s; }
+function obsTower(cx, cy, gx, gy, accent) { const b = solid(cx, cy, gx, gy, 0.5, 0.5, 204, '#9EA7C9', 0, solid(cx, cy, gx, gy, 0.5, 0.5, 6, accent, 120).svg + solid(cx, cy, gx, gy, 0.5, 0.5, 6, accent, 160).svg); const t = topC(cx, cy, gx, gy, 0.5, 0.5, 204); return { depth: b.depth, svg: b.svg + `<ellipse cx="${t[0]}" cy="${t[1] + 24}" rx="36" ry="17" fill="${mix(accent, '#131A33', 0.5)}" stroke="${accent}" stroke-width="2.5"/><ellipse cx="${t[0]}" cy="${t[1] + 14}" rx="26" ry="12" fill="#1A2242" stroke="${accent}" stroke-width="1.5"/><line x1="${t[0]}" y1="${t[1] + 2}" x2="${t[0]}" y2="${t[1] - 40}" stroke="#E6EAF5" stroke-width="2"/>` }; }
+function districtItems(d, di) {
+  const [cx, cy] = d.pos, lib = bWon(d), C = d.color, r = rng(700 + di * 17), B = [], H = HEIGHTS[d.id];
+  const accent = lib ? C : mix(C, '#1A2040', 0.5);
+  d.missions.forEach((m, i) => { const [sx, sy] = SLOTS[i]; B.push(box(cx, cy, sx, sy, 1, 1, H[i], `k${d.n} ${mDone(m) ? 'lit' : 'cartel'}`)); });
+  let more = ''; const tc = topC(cx, cy, -0.5, -0.5, 1.5, 1.5, 176);
+  if (d.id === 'd2') { [[-0.5, -0.5], [0.06, -0.5], [-0.5, 0.06], [0.625, -0.5], [-0.5, 0.625], [0.625, 0.06], [0.06, 0.625], [0.625, 0.625]].forEach(([gx, gy]) => more += solid(cx, cy, gx, gy, 0.375, 0.375, 12, accent, 176).svg); more += `<line x1="${tc[0]}" y1="${tc[1] - 6}" x2="${tc[0]}" y2="${tc[1] - 62}" stroke="#C9CFE6" stroke-width="2"/><polygon points="${tc[0]},${tc[1] - 62} ${tc[0] + 32},${tc[1] - 53} ${tc[0]},${tc[1] - 44}" fill="${accent}"/>`; }
+  if (d.id === 'd4') more += `<line x1="${tc[0]}" y1="${tc[1]}" x2="${tc[0]}" y2="${tc[1] - 78}" stroke="#AEB8D8" stroke-width="2.5"/><line x1="${tc[0] - 11}" y1="${tc[1] - 40}" x2="${tc[0] + 11}" y2="${tc[1] - 40}" stroke="#AEB8D8" stroke-width="2"/><line x1="${tc[0] - 7}" y1="${tc[1] - 60}" x2="${tc[0] + 7}" y2="${tc[1] - 60}" stroke="#AEB8D8" stroke-width="2"/>`;
+  if (d.id === 'd6') more += `<ellipse cx="${tc[0]}" cy="${tc[1]}" rx="36" ry="18" fill="none" stroke="${accent}" stroke-width="3"/>`;
+  if (d.id === 'd5') more += solid(cx, cy, -0.25, -0.25, 1, 1, 10, accent, 176).svg;
+  if (d.id === 'd1' || d.id === 'd3') more += solid(cx, cy, 0, 0, 0.5, 0.5, 18, accent, 176).svg;
+  B.push(box(cx, cy, -0.5, -0.5, 1.5, 1.5, 176, `k${d.n} ${lib ? 'lit' : 'cartel'}`, 0, more));
+  const deco = [[-2, -2], [2, -2], [-2, 2]].concat(d.missions.length < 5 ? [[2, 2]] : []);
+  deco.forEach(([sx, sy], i) => {
+    const cls = lib ? `k${d.n} lit` : 'cartel';
+    if (d.id === 'd1' && i === 0) return B.push(crane(cx, cy, sx, sy, accent));
+    if (d.id === 'd1' && i === 2) return containers(cx, cy, sx, sy).forEach(x => B.push(x));
+    if (d.id === 'd3' && i < 2) return B.push(chimney(cx, cy, sx + 0.25, sy + 0.25, accent));
+    if (d.id === 'd4' && i === 1) return B.push(solid(cx, cy, sx, sy, 1, 1, 24, '#1C2547', 0, dish(cx, cy, sx, sy, accent)));
+    if (d.id === 'd5') return B.push(box(cx, cy, sx, sy, 1, 1, 40, cls, 0, saw(cx, cy, sx, sy, 40, accent)));
+    if (d.id === 'd6' && i === 3) return B.push(obsTower(cx, cy, sx + 0.25, sy + 0.25, accent));
+    B.push(box(cx, cy, sx, sy, 1, 1, 32 + Math.round(r() * 2) * 16, cls));
+  });
+  return B;
+}
+const finalWon = () => S.final.best != null && S.final.best >= 10;
+function staticSVG(k) {
   let defs = '', css = '';
   const pats = (key, seed, fn) => { defs += pat('wL-' + key, 26.565, seed, fn) + pat('wR-' + key, -26.565, seed + 7, fn); };
   D.forEach((d, i) => {
     const C = d.color;
     pats(d.id, 11 + i * 31, r => { const x = r(); return x < 0.16 ? null : x < 0.3 ? ['#FFF4DC', 0.92] : [C, 0.35 + r() * 0.6]; });
-    css += `.k${d.n}.lit .fl{fill:${mix(C, '#0B1124', 0.8)}}.k${d.n}.lit .fr{fill:${mix(C, '#080C1B', 0.88)}}.k${d.n}.lit .ft{fill:${mix(C, '#131A33', 0.62)};stroke:${C};stroke-width:1.2}.k${d.n}.lit .wl{fill:url(#wL-${d.id})}.k${d.n}.lit .wr{fill:url(#wR-${d.id})}`;
-    defs += `<radialGradient id="gl-${d.id}"><stop offset="0" stop-color="${C}" stop-opacity=".55"/><stop offset="1" stop-color="${C}" stop-opacity="0"/></radialGradient>`;
+    css += `.k${d.n}.lit .fl{fill:${mix(C, '#0B1124', 0.8)}}.k${d.n}.lit .fr{fill:${mix(C, '#080C1B', 0.88)}}.k${d.n}.lit .ft{fill:${mix(C, '#131A33', 0.6)};stroke:${C};stroke-width:1.4}.k${d.n}.lit .wl{fill:url(#wL-${d.id})}.k${d.n}.lit .wr{fill:url(#wR-${d.id})}`;
+    defs += `<radialGradient id="gl-${d.id}"><stop offset="0" stop-color="${C}" stop-opacity=".6"/><stop offset=".55" stop-color="${C}" stop-opacity=".18"/><stop offset="1" stop-color="${C}" stop-opacity="0"/></radialGradient>`;
   });
-  pats('dk', 5, r => { const x = r(); return x < 0.05 ? ['#FF3355', 0.75] : x < 0.6 ? ['#222B4F', 0.9] : null; });
-  pats('fl', 9, r => { const x = r(); return x < 0.55 ? null : x < 0.9 ? ['#FFC979', 0.12 + r() * 0.3] : ['#9FB4FF', 0.25]; });
-  pats('vx', 3, r => { const x = r(); return x < 0.35 ? ['#FF3355', 0.3 + r() * 0.6] : x < 0.7 ? ['#3A1222', 0.9] : null; });
-  pats('gd', 4, r => { const x = r(); return x < 0.2 ? null : ['#FFD58C', 0.4 + r() * 0.6]; });
-  css += `.b .fl{fill:#0E1328}.b .fr{fill:#0A0E1E}.b .ft{fill:#161D38}.b .wl{fill:url(#wL-dk)}.b .wr{fill:url(#wR-dk)}.b.fill .fl{fill:#10162B}.b.fill .fr{fill:#0B1021}.b.fill .ft{fill:#182040}.b.fill .wl{fill:url(#wL-fl)}.b.fill .wr{fill:url(#wR-fl)}.b.vx .wl{fill:url(#wL-vx)}.b.vx .wr{fill:url(#wR-vx)}.b.vx .ft{fill:#1E0D18;stroke:#FF3355;stroke-width:1}.freed .b.vx .wl{fill:url(#wL-gd)}.freed .b.vx .wr{fill:url(#wR-gd)}.freed .b.vx .ft{stroke:#FFB547}.b.ph .fl{fill:#C9D1E8}.b.ph .fr{fill:#9EA8C7}.b.ph .ft{fill:#E6EAF5}.b.ph .wl,.b.ph .wr{fill:none}.b.red .fl{fill:#C2263F}.b.red .fr{fill:#8E1B2E}.b.red .ft{fill:#E0405A}.b.lamp .fl,.b.lamp .fr{fill:#FFB547}.b.lamp .ft{fill:#FFE2A8}`;
-  defs += `<pattern id="grid" patternUnits="userSpaceOnUse" width="64" height="32"><path d="M0 16L32 0 64 16 32 32Z" fill="none" stroke="#1A2347" stroke-width="1"/></pattern>
-  <radialGradient id="gl-red"><stop offset="0" stop-color="#FF3355" stop-opacity=".35"/><stop offset="1" stop-color="#FF3355" stop-opacity="0"/></radialGradient>
-  <radialGradient id="gl-sod"><stop offset="0" stop-color="#FFB547" stop-opacity=".5"/><stop offset="1" stop-color="#FFB547" stop-opacity="0"/></radialGradient>
-  <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1E3D"/><stop offset="1" stop-color="#050B1A"/></linearGradient>
-  <linearGradient id="beamR" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF3355" stop-opacity=".7"/><stop offset="1" stop-color="#FF3355" stop-opacity="0"/></linearGradient>
-  <linearGradient id="beamY" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFD58C" stop-opacity=".55"/><stop offset="1" stop-color="#FFD58C" stop-opacity="0"/></linearGradient>
-  <radialGradient id="moon" cx=".4" cy=".4"><stop offset="0" stop-color="#FFF6E0"/><stop offset="1" stop-color="#E8D9B8"/></radialGradient>`;
-  let g = '';
-  // ciel
-  const sr = rng(77); for (let i = 0; i < 70; i++) g += `<circle cx="${(sr() * VW).toFixed(0)}" cy="${(sr() * 300).toFixed(0)}" r="${(0.6 + sr() * 1.3).toFixed(1)}" fill="#DCE3FF" opacity="${(0.25 + sr() * 0.6).toFixed(2)}"${sr() < 0.3 ? ' class="twk"' : ''}/>`;
-  g += `<circle cx="1640" cy="86" r="70" fill="#FFF6E0" opacity=".06"/><circle cx="1640" cy="86" r="34" fill="url(#moon)"/>`;
-  // sol
-  g += `<polygon points="896,-50 1990,497 896,1044 -198,497" fill="#0A1022"/><polygon points="896,-50 1990,497 896,1044 -198,497" fill="url(#grid)" opacity=".85"/>`;
-  g += `<polygon points="0,860 250,985 470,1080 0,1080" fill="url(#sea)"/>`;
-  for (let i = 0; i < 9; i++) { const x = 30 + i * 46, y = 900 + (i % 3) * 40 + i * 12; if (y < 1075) g += `<line x1="${x}" y1="${y}" x2="${x + 26}" y2="${y}" stroke="#6FA8FF" stroke-opacity=".35" stroke-width="2" class="twk" style="animation-delay:${i * 0.4}s"/>`; }
-  // lignes de métro
-  D.forEach(d => { const p = isoPath(TOUR, d.pos).map(q => q.join(',')).join(' '); g += `<polyline points="${p}" fill="none" stroke="#050812" stroke-width="12" stroke-linejoin="round"/><polyline id="metro-${d.id}" class="metro" points="${p}" stroke="${d.color}"/>`; });
-  const pp = isoPath(PHARE, D[0].pos).map(q => q.join(',')).join(' ');
-  g += `<polyline points="${pp}" fill="none" stroke="#050812" stroke-width="10"/><polyline class="metro part" points="${pp}" stroke="#FFB547"/>`;
-  // lueurs et esplanades
-  D.forEach(d => { const [cx, cy] = d.pos; g += `<ellipse id="glow-${d.id}" cx="${cx}" cy="${cy + 20}" rx="260" ry="130" fill="url(#gl-${d.id})" opacity="0"/><ellipse id="red-${d.id}" class="glitch" cx="${cx}" cy="${cy + 20}" rx="200" ry="100" fill="url(#gl-red)"/>`; });
-  g += `<ellipse cx="${TOUR[0]}" cy="${TOUR[1] + 10}" rx="210" ry="105" fill="url(#gl-red)" id="tourglow"/>`;
-  // bâtiments
-  const B = [];
-  D.forEach((d, di) => {
-    const [cx, cy] = d.pos; const r = rng(100 + di * 13);
-    const pl = [iso(-2.75, -2.75), iso(3.75, -2.75), iso(3.75, 3.75), iso(-2.75, 3.75)].map(p => (cx + p[0]) + ',' + (cy + p[1])).join(' ');
-    g += `<polygon id="plaza-${d.id}" class="plaza" points="${pl}" fill="#0C1229" fill-opacity=".9" stroke="#3A1426" stroke-width="2"/>`;
-    d.missions.forEach((m, i) => { const [sx, sy] = SLOTS[i]; B.push(box(cx, cy, sx, sy, 1, 1, 80 + Math.round(r() * 3) * 16, `k${d.n}`, `data-b="${m.id}"`)); });
-    B.push(box(cx, cy, -0.5, -0.5, 1.5, 1.5, 176, `k${d.n}`, `data-b="boss-${d.id}"`));
-    [[-2, -2], [2, -2], [-2, 2]].forEach(([sx, sy], i) => { if (d.missions.length > 4 && sx === 2 && sy === 2) return; B.push(box(cx, cy, sx, sy, 1, 1, 32 + Math.round(r() * 2) * 16, 'fill')); });
+  pats('ct', 6, r => { const x = r(); return x < 0.16 ? ['#FF3355', 0.55 + r() * 0.4] : x < 0.55 ? ['#3A2448', 0.9] : null; });
+  pats('dk', 5, r => { const x = r(); return x < 0.05 ? ['#FF3355', 0.8] : x < 0.62 ? ['#232C52', 0.9] : null; });
+  pats('fl', 9, r => { const x = r(); return x < 0.5 ? null : x < 0.88 ? ['#FFC979', 0.14 + r() * 0.34] : ['#A8BCFF', 0.3]; });
+  pats('vx', 3, r => { const x = r(); return x < 0.38 ? ['#FF3355', 0.35 + r() * 0.6] : x < 0.72 ? ['#3A1222', 0.9] : null; });
+  pats('gd', 4, r => { const x = r(); return x < 0.18 ? null : ['#FFD58C', 0.45 + r() * 0.55]; });
+  css += `.b .fl{fill:#0E1328}.b .fr{fill:#0A0E1E}.b .ft{fill:#161D38}.b .wl{fill:url(#wL-dk)}.b .wr{fill:url(#wR-dk)}.b.cartel .fl{fill:#170F25}.b.cartel .fr{fill:#100A1C}.b.cartel .ft{fill:#25162F;stroke:#FF3355;stroke-opacity:.5;stroke-width:1.2}.b.cartel .wl{fill:url(#wL-ct)}.b.cartel .wr{fill:url(#wR-ct)}.b.fill .fl{fill:#10172D}.b.fill .fr{fill:#0B1022}.b.fill .ft{fill:#1A2244}.b.fill .wl{fill:url(#wL-fl)}.b.fill .wr{fill:url(#wR-fl)}.b.vx .wl{fill:url(#wL-vx)}.b.vx .wr{fill:url(#wR-vx)}.b.vx .ft{fill:#1E0D18;stroke:#FF3355;stroke-width:1.5}.won .b.vx .wl{fill:url(#wL-gd)}.won .b.vx .wr{fill:url(#wR-gd)}.won .b.vx .ft{stroke:#FFB547}.b.ph .fl{fill:#C9D1E8}.b.ph .fr{fill:#9EA8C7}.b.ph .ft{fill:#E6EAF5}.b.ph .wl,.b.ph .wr{fill:none}.b.red .fl{fill:#C2263F}.b.red .fr{fill:#8E1B2E}.b.red .ft{fill:#E0405A}.b.red .wl,.b.red .wr{fill:none}.b.lamp .fl,.b.lamp .fr{fill:#FFB547}.b.lamp .ft{fill:#FFE2A8}.b.lamp .wl,.b.lamp .wr{fill:none}`;
+  defs += `<pattern id="grid" patternUnits="userSpaceOnUse" width="64" height="32"><path d="M0 16L32 0 64 16 32 32Z" fill="none" stroke="#18213F" stroke-width="1"/></pattern>
+  <radialGradient id="gl-red"><stop offset="0" stop-color="#FF3355" stop-opacity=".32"/><stop offset="1" stop-color="#FF3355" stop-opacity="0"/></radialGradient>
+  <radialGradient id="gl-sod"><stop offset="0" stop-color="#FFB547" stop-opacity=".55"/><stop offset="1" stop-color="#FFB547" stop-opacity="0"/></radialGradient>
+  <radialGradient id="lamp"><stop offset="0" stop-color="#FFC979" stop-opacity=".55"/><stop offset="1" stop-color="#FFC979" stop-opacity="0"/></radialGradient>
+  <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0D2348"/><stop offset="1" stop-color="#040A18"/></linearGradient>
+  <linearGradient id="fog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1A2556" stop-opacity=".75"/><stop offset="1" stop-color="#1A2556" stop-opacity="0"/></linearGradient>`;
+  let g = `<rect width="${VW}" height="${VH}" fill="#0A1022"/><rect width="${VW}" height="${VH}" fill="url(#grid)"/>`;
+  const xEnd = (VH - 754) * 2;
+  g += `<polygon points="0,${coastY(0)} ${xEnd},${VH} 0,${VH}" fill="url(#sea)"/><line x1="0" y1="${coastY(0)}" x2="${xEnd}" y2="${VH}" stroke="#2B5C9E" stroke-opacity=".6" stroke-width="2.5"/>`;
+  for (let i = 0; i < 14; i++) { const x = 16 + i * 46, y = coastY(x) + 30 + (i % 4) * 34; if (y < VH - 8) g += `<line x1="${x}" y1="${y}" x2="${x + 26}" y2="${y}" stroke="#5E93E0" stroke-opacity=".22" stroke-width="2"/>`; }
+  LINES().forEach(({ d, pts }) => {
+    const ps = pts.map(p => p.join(',')).join(' '), lib = d ? bWon(d) : true, part = d ? dProg(d).done > 0 : true, col = d ? d.color : '#FFB547';
+    g += `<polyline points="${ps}" fill="none" stroke="#05080F" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/><polyline points="${ps}" fill="none" stroke="${col}" stroke-width="${lib ? 4.5 : 3}" stroke-opacity="${lib ? 0.95 : part ? 0.5 : 0.2}"${lib ? '' : ' stroke-dasharray="7 9"'} stroke-linejoin="round" stroke-linecap="round"/>`;
+    for (let s = 0; s < pts.length - 1; s++) { const a = pts[s], b = pts[s + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 1) continue; const nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L; for (let t = 34; t < L - 24; t += 54) { const x = a[0] + (b[0] - a[0]) * t / L, y = a[1] + (b[1] - a[1]) * t / L; [1, -1].forEach(sg => { const lx = (x + nx * 14 * sg).toFixed(1), ly = (y + ny * 14 * sg).toFixed(1); g += `<circle cx="${lx}" cy="${ly}" r="8" fill="url(#lamp)"/><circle cx="${lx}" cy="${ly}" r="1.8" fill="#FFE2A8"/>`; }); } }
   });
-  // remplissage
-  const fr2 = rng(2026), segs = [];
-  D.forEach(d => { const p = isoPath(TOUR, d.pos); segs.push([p[0], p[1]], [p[1], p[2]]); });
-  const dseg = (p, a, b) => { const vx = b[0] - a[0], vy = b[1] - a[1], wx = p[0] - a[0], wy = p[1] - a[1]; const t = clamp((vx * wx + vy * wy) / (vx * vx + vy * vy || 1), 0, 1); return Math.hypot(wx - t * vx, wy - t * vy); };
-  for (let u = -26; u <= 27; u += 2.5) for (let v = 2; v <= 64; v += 2.5) {
-    const gx = Math.round((u + v) / 2 * 2) / 2 + (fr2() < 0.5 ? 0.5 : 0), gy = Math.round((v - u) / 2 * 2) / 2;
-    const [x, y] = iso(gx, gy);
-    if (Math.abs(x - 896) / 1060 + Math.abs(y - 497) / 520 > 0.97) continue;
-    if (y > 860 + x * 0.5 - 40 && x < 520) continue;
-    if (D.some(d => Math.hypot((x - d.pos[0]) / 1.9, y - d.pos[1]) < 125)) continue;
-    if (Math.hypot((x - TOUR[0]) / 1.9, y - TOUR[1]) < 95) continue;
-    if (Math.hypot(x - PHARE[0], y - PHARE[1]) < 90) continue;
-    if (segs.some(s => dseg([x, y], s[0], s[1]) < 30)) continue;
-    if (fr2() < 0.18) continue;
-    const w = fr2() < 0.5 ? 1 : 1.5, dd = fr2() < 0.5 ? 1 : 1.5, h = 32 + Math.floor(fr2() * 6) * 16;
-    B.push(box(0, 0, gx, gy, w, dd, h, 'fill'));
-  }
-  B.push(box(TOUR[0], TOUR[1], -1, -1, 2, 2, 200, 'vx'));
-  B.push(box(PHARE[0], PHARE[1], -0.5, -0.5, 1, 1, 128, 'ph'));
-  B.push(box(PHARE[0], PHARE[1], -0.5, -0.5, 1, 1, 14, 'red', '', 40));
-  B.push(box(PHARE[0], PHARE[1], -0.5, -0.5, 1, 1, 14, 'red', '', 90));
-  B.push(box(PHARE[0], PHARE[1], -0.25, -0.25, 0.5, 0.5, 16, 'lamp', '', 128));
-  B.sort((a, b) => a.depth - b.depth).forEach(b => g += b.svg);
-  // tour vortex
-  const ty = TOUR[1] - 200;
-  g += `<polygon class="beam" points="${TOUR[0] - 6},${ty} ${TOUR[0] + 6},${ty} ${TOUR[0] + 22},0 ${TOUR[0] - 22},0" fill="url(#beamR)" id="tourbeam"/>`;
-  g += `<g id="tourtop"><ellipse cx="${TOUR[0]}" cy="${ty}" rx="30" ry="15" fill="none" stroke="#FF3355" stroke-width="3"/><circle class="pulse" cx="${TOUR[0]}" cy="${ty}" r="7" fill="#FF3355"/></g>`;
-  // phare
-  g += `<polygon class="sweep" points="160,790 520,700 520,880" fill="url(#beamY)" opacity=".5"/><ellipse cx="160" cy="800" rx="40" ry="20" fill="url(#gl-sod)"/>`;
-  // zones cliquables et étiquettes
-  let top = '';
   D.forEach(d => {
-    const [cx, cy] = d.pos; const pl = [iso(-3, -3), iso(4, -3), iso(4, 4), iso(-3, 4)].map(p => (cx + p[0]) + ',' + (cy + p[1])).join(' ');
-    const w = 92 + d.name.length * 11, ly = cy - 232;
-    top += `<g class="hit" data-hit="d:${d.id}" tabindex="0" role="button" aria-label="Ligne ${d.n}, ${esc(d.name)}"><polygon points="${pl}" fill="transparent"/><polygon points="${cx - 40},${cy - 210} ${cx + 40},${cy - 210} ${cx + 40},${cy} ${cx - 40},${cy}" fill="transparent"/>
-      <g class="lab"><rect x="${cx - w / 2}" y="${ly - 17}" width="${w}" height="34" rx="9" fill="#0B1124" fill-opacity=".92" stroke="${d.color}" stroke-width="1.5"/><circle cx="${cx - w / 2 + 18}" cy="${ly}" r="10" fill="${d.color}"/><text x="${cx - w / 2 + 18}" y="${ly + 5}" text-anchor="middle" font-family="Big Shoulders, Arial Narrow, sans-serif" font-weight="900" font-size="15" fill="#071022">${d.n}</text><text x="${cx - w / 2 + 36}" y="${ly + 6}" font-family="Big Shoulders, Arial Narrow, sans-serif" font-weight="800" font-size="19" fill="#EEF1F8">${esc(d.name)}</text><text id="pct-${d.id}" x="${cx + w / 2 - 10}" y="${ly + 5}" text-anchor="end" font-family="Overpass Mono, monospace" font-weight="700" font-size="12" fill="${d.color}">0 %</text></g></g>`;
+    const [cx, cy] = d.pos, p = dProg(d), lib = bWon(d);
+    const pl = [iso(-2.75, -2.75), iso(3.75, -2.75), iso(3.75, 3.75), iso(-2.75, 3.75)].map(q => (cx + q[0]) + ',' + (cy + q[1])).join(' ');
+    g += `<ellipse cx="${cx}" cy="${cy + 24}" rx="300" ry="150" fill="url(#${lib ? 'gl-' + d.id : 'gl-red'})"/>`;
+    if (!lib && p.done) g += `<ellipse cx="${cx}" cy="${cy + 24}" rx="270" ry="135" fill="url(#gl-${d.id})" opacity="${(p.done / p.total).toFixed(2)}"/>`;
+    g += `<polygon points="${pl}" fill="#0C1229" fill-opacity=".94" stroke="${lib ? d.color : p.done ? mix(d.color, '#3A1426', 0.45) : '#4A1830'}" stroke-width="${lib ? 3 : 2}"/>`;
+    const inner = [iso(-2.5, -2.5), iso(3.5, -2.5), iso(3.5, 3.5), iso(-2.5, 3.5)].map(q => (cx + q[0]) + ',' + (cy + q[1])).join(' ');
+    g += `<polygon points="${inner}" fill="none" stroke="${lib ? d.color : '#2A1830'}" stroke-opacity="${lib ? 0.35 : 0.6}" stroke-dasharray="4 6"/>`;
   });
-  top += `<g class="hit" data-hit="tour" tabindex="0" role="button" aria-label="Tour Vortex, BTS blanc"><polygon points="${TOUR[0] - 70},${TOUR[1] + 40} ${TOUR[0] + 70},${TOUR[1] + 40} ${TOUR[0] + 70},${ty - 20} ${TOUR[0] - 70},${ty - 20}" fill="transparent"/><g class="lab"><rect x="${TOUR[0] - 92}" y="${TOUR[1] + 44}" width="184" height="30" rx="8" fill="#16070F" fill-opacity=".92" stroke="#FF3355" stroke-width="1.5" id="tourlab"/><text id="tourtxt" x="${TOUR[0]}" y="${TOUR[1] + 64}" text-anchor="middle" font-family="Big Shoulders, Arial Narrow, sans-serif" font-weight="800" font-size="17" fill="#FFB3C1">TOUR VORTEX · VERROUILLÉE</text></g></g>`;
-  top += `<g class="hit" data-hit="phare" tabindex="0" role="button" aria-label="Le Phare, quartier général"><polygon points="100,960 220,960 220,770 100,770" fill="transparent"/><g class="lab"><rect x="190" y="908" width="132" height="30" rx="8" fill="#1B1506" fill-opacity=".92" stroke="#FFB547" stroke-width="1.5"/><text x="256" y="928" text-anchor="middle" font-family="Big Shoulders, Arial Narrow, sans-serif" font-weight="800" font-size="17" fill="#FFD58C">LE PHARE · QG</text></g></g>`;
-  $('#world').innerHTML = `<svg viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><style>${css}</style>${g}${top}</svg>`;
+  g += `<ellipse cx="${TOUR[0]}" cy="${TOUR[1] + 12}" rx="230" ry="115" fill="url(#${finalWon() ? 'gl-sod' : 'gl-red'})"/>`;
+  const B = [];
+  D.forEach((d, i) => districtItems(d, i).forEach(x => B.push(x)));
+  fillers().forEach(f => { let more = ''; if (f.roof === 'tank') more = solid(0, 0, f.gx + 0.25, f.gy + 0.25, 0.5, 0.5, 12, '#2A3358', f.h).svg; else if (f.roof === 'unit') more = solid(0, 0, f.gx + 0.25, f.gy + 0.375, 0.5, 0.25, 8, '#3A4670', f.h).svg; B.push(box(0, 0, f.gx, f.gy, f.w, f.d, f.h, 'fill', 0, more)); });
+  B.push(box(TOUR[0], TOUR[1], -1, -1, 2, 2, 200, 'vx'));
+  B.push(solid(TOUR[0], TOUR[1], -0.75, -0.75, 1.5, 1.5, 16, finalWon() ? '#FFB547' : '#5A1426', 200));
+  B.push({ depth: PHARE[1] - 60, svg: `<polygon points="${[iso(-1.25, -1.25), iso(1.25, -1.25), iso(1.25, 1.25), iso(-1.25, 1.25)].map(p => (PHARE[0] + p[0]) + ',' + (PHARE[1] + p[1])).join(' ')}" fill="#1B2440" stroke="#33406C" stroke-width="2"/>` });
+  B.push(box(PHARE[0], PHARE[1], -0.5, -0.5, 1, 1, 128, 'ph'));
+  B.push(box(PHARE[0], PHARE[1], -0.5, -0.5, 1, 1, 14, 'red', 40));
+  B.push(box(PHARE[0], PHARE[1], -0.5, -0.5, 1, 1, 14, 'red', 90));
+  B.push(box(PHARE[0], PHARE[1], -0.25, -0.25, 0.5, 0.5, 16, 'lamp', 128));
+  B.sort((a, b) => a.depth - b.depth).forEach(b => g += b.svg);
+  g += `<rect width="${VW}" height="300" fill="url(#fog)"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(VW * k)}" height="${Math.round(VH * k)}" viewBox="0 0 ${VW} ${VH}" class="${finalWon() ? 'won' : ''}"><defs>${defs}</defs><style>${css}</style>${g}</svg>`;
+}
+let FLASH = [], litPrev = null;
+function sign(cx, ly, color, title, sub, num, lib) {
+  const w = Math.round(64 + title.length * 12.4 + (sub ? sub.length * 8 + 14 : 0)), x = cx - w / 2;
+  return `<g class="sign${lib ? ' lib' : ''}" data-cx="${cx}" style="--c:${color}"><rect class="sgl" x="${x}" y="${ly - 20}" width="${w}" height="40" rx="11"/><rect class="sg" x="${x}" y="${ly - 20}" width="${w}" height="40" rx="11"/>${num != null ? `<circle cx="${x + 22}" cy="${ly}" r="12" fill="${color}"/><text class="sgn" x="${x + 22}" y="${ly + 5.5}" text-anchor="middle">${num}</text>` : ''}<text class="sgt" x="${x + (num != null ? 42 : 16)}" y="${ly + 7.5}">${esc(title)}</text>${sub ? `<text class="sgp" x="${x + w - 14}" y="${ly + 5}" text-anchor="end">${esc(sub)}</text>` : ''}</g>`;
+}
+function overlaySVG() {
+  let o = '', hits = '';
+  for (let i = 0; i < 9; i++) { const x = 30 + i * 62, y = coastY(x) + 46 + (i % 3) * 38; if (y < VH - 10) o += `<line class="twk" style="animation-delay:${(i * 0.45).toFixed(2)}s" x1="${x}" y1="${y}" x2="${x + 30}" y2="${y + 1}" stroke="#8DBBFF" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>`; }
+  const ly0 = PHARE[1] - 136;
+  o += `<g class="sweep" style="transform-origin:${PHARE[0]}px ${ly0}px"><polygon points="${PHARE[0]},${ly0} ${PHARE[0] + 300},${ly0 - 56} ${PHARE[0] + 300},${ly0 + 44}" fill="url(#beamY)" opacity=".7"/></g><circle class="twk" cx="${PHARE[0]}" cy="${ly0}" r="18" fill="url(#ov-sod)"/>`;
+  D.forEach(d => { if (!bWon(d)) return; const ps = isoPath(TOUR, d.pos).map(p => p.join(',')).join(' '); o += `<polyline class="train" points="${ps}" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-dasharray="18 600" stroke-opacity=".95"/>`; });
+  D.forEach(d => {
+    const [cx, cy] = d.pos, lib = bWon(d), H = HEIGHTS[d.id];
+    if (!lib) { const t = topC(cx, cy, -0.5, -0.5, 1.5, 1.5, 176); o += `<circle class="blink" cx="${t[0] + 14}" cy="${t[1] - 2}" r="4" fill="#FF3355"/>`; const m = d.missions.findIndex(x => !mDone(x)); if (m >= 0) { const [sx, sy] = SLOTS[m], t2 = topC(cx, cy, sx, sy, 1, 1, H[m]); o += `<circle class="blink" style="animation-delay:.7s" cx="${t2[0]}" cy="${t2[1] - 2}" r="3.5" fill="#FF3355"/>`; } }
+    if (d.id === 'd3') [[-2, -2], [2, -2]].forEach(([sx, sy], j) => { const t = topC(cx, cy, sx + 0.25, sy + 0.25, 0.5, 0.5, 204); for (let k = 0; k < 3; k++) o += `<circle class="smoke" style="animation-delay:${(k * 1.3 + j * 0.6).toFixed(1)}s" cx="${t[0]}" cy="${t[1] - 6}" r="9" fill="${lib ? '#C9CFE6' : '#6A5060'}" opacity="0"/>`; });
+    if (d.id === 'd4') { const t = topC(cx, cy, -0.5, -0.5, 1.5, 1.5, 176); o += `<circle class="blink" cx="${t[0]}" cy="${t[1] - 78}" r="4.5" fill="${lib ? d.color : '#FF3355'}"/>`; }
+    if (d.id === 'd1') { const t = topC(cx, cy, -1.625, -1.625, 0.25, 0.25, 214); o += `<circle class="blink" style="animation-delay:.3s" cx="${t[0]}" cy="${t[1] - 30}" r="4" fill="${lib ? '#FFB547' : '#FF3355'}"/>`; }
+    if (d.id === 'd6') { const t = topC(cx, cy, 2.25, 2.25, 0.5, 0.5, 204); o += `<circle class="blink" cx="${t[0]}" cy="${t[1] - 40}" r="4" fill="${lib ? d.color : '#FF3355'}"/>`; }
+  });
+  const won = finalWon(), ty = TOUR[1] - 216, col = won ? '#FFB547' : '#FF3355';
+  if (!won) o += `<polygon class="beam" points="${TOUR[0] - 6},${ty} ${TOUR[0] + 6},${ty} ${TOUR[0] + 26},-40 ${TOUR[0] - 26},-40" fill="url(#beamR)"/>`;
+  o += `<ellipse cx="${TOUR[0]}" cy="${ty}" rx="34" ry="17" fill="none" stroke="${col}" stroke-width="3"/><circle class="pulse" cx="${TOUR[0]}" cy="${ty}" r="7" fill="${col}"/>`;
+  FLASH.forEach(f => { o += `<circle class="flash" cx="${f.x}" cy="${f.y}" r="${f.big ? 150 : 80}" fill="url(#fl-${f.id})"/>`; }); FLASH = [];
+  D.forEach(d => {
+    const [cx, cy] = d.pos, p = dProg(d), lib = bWon(d);
+    const pl = [iso(-3, -3), iso(4, -3), iso(4, 4), iso(-3, 4)].map(q => (cx + q[0]) + ',' + (cy + q[1])).join(' ');
+    hits += `<g class="hit" data-hit="d:${d.id}" tabindex="0" role="button" aria-label="Ligne ${d.n}, ${esc(d.name)}, ${p.pct} pour cent"><polygon points="${pl}" fill="transparent"/><rect x="${cx - 50}" y="${cy - 236}" width="100" height="236" fill="transparent"/>${sign(cx, cy - 238, d.color, d.name.toUpperCase(), lib ? 'LIBÉRÉ' : fr(p.pct + ' %'), d.n, lib)}</g>`;
+  });
+  const fu = finalUnlocked();
+  hits += `<g class="hit" data-hit="tour" tabindex="0" role="button" aria-label="Tour Vortex, BTS blanc"><polygon points="${TOUR[0] - 76},${TOUR[1] + 44} ${TOUR[0] + 76},${TOUR[1] + 44} ${TOUR[0] + 76},${ty - 24} ${TOUR[0] - 76},${ty - 24}" fill="transparent"/>${sign(TOUR[0] + 196, TOUR[1] - 118, won ? '#FFB547' : '#FF3355', 'TOUR VORTEX', won ? 'LIBÉRÉE' : fu ? 'BTS BLANC' : 'VERROUILLÉE', null, won || fu)}</g>`;
+  hits += `<g class="hit" data-hit="phare" tabindex="0" role="button" aria-label="Le Phare, quartier général"><polygon points="${PHARE[0] - 60},${PHARE[1] + 40} ${PHARE[0] + 60},${PHARE[1] + 40} ${PHARE[0] + 60},${PHARE[1] - 170} ${PHARE[0] - 60},${PHARE[1] - 170}" fill="transparent"/>${sign(PHARE[0] + 6, PHARE[1] + 50, '#FFB547', 'LE PHARE', 'QG', null, true)}</g>`;
+  const fl = D.map(d => `<radialGradient id="fl-${d.id}"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".9"/><stop offset=".3" stop-color="${d.color}" stop-opacity=".7"/><stop offset="1" stop-color="${d.color}" stop-opacity="0"/></radialGradient>`).join('');
+  return `<svg viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg"><defs>${fl}<linearGradient id="beamR" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF3355" stop-opacity=".75"/><stop offset="1" stop-color="#FF3355" stop-opacity="0"/></linearGradient><linearGradient id="beamY" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFD58C" stop-opacity=".5"/><stop offset="1" stop-color="#FFD58C" stop-opacity="0"/></linearGradient><radialGradient id="ov-sod"><stop offset="0" stop-color="#FFE2A8" stop-opacity=".95"/><stop offset="1" stop-color="#FFB547" stop-opacity="0"/></radialGradient></defs>${o}${hits}</svg>`;
+}
+let cityKey = '', cityBusy = false, cityAgain = false;
+function renderCity(force) {
+  const key = JSON.stringify([MISSIONS.map(mDone), D.map(bWon), finalWon()]);
+  if (!force && key === cityKey) return; cityKey = key;
+  if (cityBusy) { cityAgain = true; return; }
+  cityBusy = true; const svg = staticSVG(CANVAS_K);
+  const done = () => { cityBusy = false; if (cityAgain) { cityAgain = false; renderCity(true); } };
+  const inline = () => { $('#cityfb').innerHTML = svg.replace(/^<svg([^>]*?) width="\d+" height="\d+"/, `<svg$1 width="${VW}" height="${VH}"`); $('#city').style.display = 'none'; done(); };
+  let url; try { url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })); } catch (e) { return inline(); }
+  const img = new Image();
+  img.onload = () => { try { const cv = $('#city'), w = Math.round(VW * CANVAS_K), h = Math.round(VH * CANVAS_K); if (cv.width !== w) cv.width = w; if (cv.height !== h) cv.height = h; const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h); cv.style.display = ''; $('#cityfb').innerHTML = ''; } catch (e) { URL.revokeObjectURL(url); return inline(); } URL.revokeObjectURL(url); done(); };
+  img.onerror = () => { URL.revokeObjectURL(url); inline(); };
+  img.src = url;
 }
 function updateMap(anim) {
-  D.forEach(d => {
-    const p = dProg(d);
-    d.missions.forEach(m => { const el = $(`[data-b="${m.id}"]`); if (el) { const was = el.classList.contains('lit'); el.classList.toggle('lit', mDone(m)); if (anim && !was && mDone(m)) el.classList.add('lightup'); } });
-    const bb = $(`[data-b="boss-${d.id}"]`); if (bb) { const was = bb.classList.contains('lit'); bb.classList.toggle('lit', bWon(d)); if (anim && !was && bWon(d)) bb.classList.add('lightup'); }
-    const gl = $('#glow-' + d.id); if (gl) gl.setAttribute('opacity', (p.done / p.total).toFixed(2));
-    const rd = $('#red-' + d.id); if (rd) rd.style.display = bWon(d) ? 'none' : '';
-    const pz = $('#plaza-' + d.id); if (pz) pz.setAttribute('stroke', p.done ? d.color : '#3A1426');
-    const pc = $('#pct-' + d.id); if (pc) pc.textContent = fr(p.pct + ' %');
-    const mt = $('#metro-' + d.id); if (mt) { mt.classList.toggle('on', bWon(d)); mt.classList.toggle('part', !bWon(d) && p.done > 0); }
-  });
-  const fu = finalUnlocked(), won = S.final.best != null && S.final.best >= 10;
-  const svg = $('#world svg'); if (svg) svg.classList.toggle('freed', won);
-  const tt = $('#tourtxt'); if (tt) tt.textContent = won ? 'TOUR VORTEX · LIBÉRÉE' : fu ? 'TOUR VORTEX · BTS BLANC' : 'TOUR VORTEX · VERROUILLÉE';
-  const tl = $('#tourlab'); if (tl) tl.setAttribute('stroke', won ? '#FFB547' : fu ? '#FFB547' : '#FF3355');
-  const tg = $('#tourglow'); if (tg) tg.setAttribute('fill', won ? 'url(#gl-sod)' : 'url(#gl-red)');
-  const tb = $('#tourbeam'); if (tb) tb.style.display = won ? 'none' : '';
-  $$('#tourtop *').forEach(e => { e.setAttribute(e.tagName === 'circle' ? 'fill' : 'stroke', won ? '#FFB547' : '#FF3355'); });
+  const lit = {}; MISSIONS.forEach(m => lit[m.id] = mDone(m)); D.forEach(d => lit['b-' + d.id] = bWon(d));
+  if (anim && litPrev) D.forEach(d => { const [cx, cy] = d.pos; d.missions.forEach((m, i) => { if (lit[m.id] && !litPrev[m.id]) { const [sx, sy] = SLOTS[i], t = topC(cx, cy, sx, sy, 1, 1, HEIGHTS[d.id][i]); FLASH.push({ x: t[0], y: t[1] + 30, id: d.id }); } }); if (lit['b-' + d.id] && !litPrev['b-' + d.id]) FLASH.push({ x: cx, y: cy - 60, id: d.id, big: true }); });
+  litPrev = lit;
+  renderCity(); $('#ov').innerHTML = overlaySVG(); fixSigns();
+}
+function fixSigns() {
+  $$('#ov .sign').forEach(g => { try {
+    const t = $('.sgt', g), p = $('.sgp', g), c = $('circle', g), n = $('.sgn', g), rs = $$('rect', g); if (!t) return;
+    const cx = +g.dataset.cx, tw = t.getComputedTextLength(), pw = p ? p.getComputedTextLength() : 0, lead = c ? 42 : 16;
+    const w = Math.ceil(lead + tw + (p ? 16 + pw : 0) + 16), x = cx - w / 2;
+    rs.forEach(r => { r.setAttribute('x', x); r.setAttribute('width', w); });
+    t.setAttribute('x', x + lead); if (p) p.setAttribute('x', x + w - 14); if (c) { c.setAttribute('cx', x + 22); n.setAttribute('x', x + 22); }
+  } catch (e) { } });
 }
 
 /* ---------- caméra ---------- */
 const stage = $('#stage'), world = $('#world');
+world.style.width = VW + 'px'; world.style.height = VH + 'px';
+world.innerHTML = '<canvas id="city" aria-hidden="true"></canvas><div id="cityfb"></div><div id="ov"></div>';
+const CANVAS_K = (() => { const mob = Math.min(innerWidth, innerHeight) <= 760, dpr = window.devicePixelRatio || 1; return Math.min(clamp(dpr * 1.3, 1.5, mob ? 1.8 : 2.4), Math.sqrt(12e6 / (VW * VH))); })();
 const cam = { x: 0, y: 0, s: 1, min: 0.3, max: 3, fit: 1 };
-function applyCam(anim) { world.style.transition = anim && !S.settings.reduced ? 'transform .7s cubic-bezier(.2,.8,.2,1)' : 'none'; world.style.transform = `translate3d(${cam.x}px,${cam.y}px,0) scale(${cam.s})`; }
-function clampCam() { const W = innerWidth, H = innerHeight, w = VW * cam.s, h = VH * cam.s; cam.x = w <= W ? (W - w) / 2 : clamp(cam.x, W - w - 60, 60); cam.y = h <= H ? (H - h) / 2 : clamp(cam.y, H - h - 60, 60); }
-function fitCam(anim) { const W = innerWidth, H = innerHeight; const s = Math.max(W / VW, Math.min(H / VH, W / VW * 2.2)); cam.fit = s; cam.min = s * 0.8; cam.max = s * 3.2; cam.s = s; cam.x = (W - VW * s) / 2; cam.y = (H - VH * s) / 2; clampCam(); applyCam(anim); }
+function applyCam(anim) { world.style.transition = anim && !S.settings.reduced ? 'transform .7s cubic-bezier(.2,.8,.2,1)' : 'none'; world.style.transform = `translate3d(${cam.x.toFixed(1)}px,${cam.y.toFixed(1)}px,0) scale(${cam.s.toFixed(4)})`; }
+function clampCam() { const W = innerWidth, H = innerHeight, w = VW * cam.s, h = VH * cam.s; cam.x = w <= W ? (W - w) / 2 : clamp(cam.x, W - w, 0); cam.y = h <= H ? (H - h) / 2 : clamp(cam.y, H - h, 0); }
+function fitCam(anim) {
+  const W = innerWidth, H = innerHeight, mob = W <= 760, portrait = H > W * 1.05;
+  const top = mob ? 128 : 24, bot = mob ? 96 : 80, cover = Math.max(W / VW, H / VH);
+  const bx0 = 150, bx1 = 1800, by0 = 84, by1 = 1130;
+  const fitS = Math.min((W - 40) / (bx1 - bx0), (H - top - bot) / (by1 - by0));
+  const s = portrait ? cover : Math.max(fitS, cover);
+  cam.fit = s; cam.min = portrait ? s * 0.55 : Math.min(s, cover) * 0.9; cam.max = s * 2.6; cam.s = s;
+  if (portrait) { cam.x = W / 2 - TOUR[0] * s; cam.y = H / 2 - (TOUR[1] - 40) * s; }
+  else { cam.x = W / 2 - (bx0 + bx1) / 2 * s; cam.y = top + (H - top - bot) / 2 - (by0 + by1) / 2 * s; }
+  clampCam(); applyCam(anim);
+}
 function zoomAt(mx, my, ns, anim) { ns = clamp(ns, cam.min, cam.max); const wx = (mx - cam.x) / cam.s, wy = (my - cam.y) / cam.s; cam.s = ns; cam.x = mx - wx * ns; cam.y = my - wy * ns; clampCam(); applyCam(anim); }
-function focus(px, py, k) { const W = innerWidth, H = innerHeight, mob = W <= 760; const cx = mob ? W / 2 : (W - 420) / 2, cy = mob ? H * 0.27 : H / 2 + 30; cam.s = clamp(cam.fit * (k || 1.7), cam.min, cam.max); cam.x = cx - px * cam.s; cam.y = cy - py * cam.s; clampCam(); applyCam(true); }
-let drag = null, downHit = null;
-stage.addEventListener('pointerdown', e => { if (e.button !== 0) return; downHit = e.target.closest('[data-hit]'); drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false }; });
-addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; stage.classList.add('drag'); } if (drag.moved) { cam.x = drag.cx + dx; cam.y = drag.cy + dy; clampCam(); applyCam(false); } });
-addEventListener('pointerup', e => { if (!drag) return; const moved = drag.moved; drag = null; stage.classList.remove('drag'); if (!moved && downHit) hitAction(downHit.dataset.hit); else if (!moved && !downHit) closePanel(); downHit = null; });
+function focus(px, py, k) { const W = innerWidth, H = innerHeight, mob = W <= 760; if (mob) k = Math.min(k || 1, 1.05); const cx = mob ? W / 2 : (W - 430) / 2 + 10, cy = mob ? H * 0.24 : H / 2 + 20; cam.s = clamp(cam.fit * (k || 1.6), cam.min, cam.max); cam.x = cx - px * cam.s; cam.y = cy - py * cam.s; clampCam(); applyCam(true); }
+let drag = null, downHit = null, pinch = null; const ptr = new Map();
+stage.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  ptr.set(e.pointerId, [e.clientX, e.clientY]);
+  if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, s: cam.s }; drag = null; downHit = null; return; }
+  downHit = e.target.closest('[data-hit]'); drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false };
+});
+addEventListener('pointermove', e => {
+  if (ptr.has(e.pointerId)) ptr.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pinch && ptr.size === 2) { const [a, b] = [...ptr.values()]; zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, pinch.s * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinch.d); return; }
+  if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; stage.classList.add('drag'); }
+  if (drag.moved) { cam.x = drag.cx + dx; cam.y = drag.cy + dy; clampCam(); applyCam(false); }
+});
+const endPtr = e => { ptr.delete(e.pointerId); if (ptr.size < 2) pinch = null; if (!drag) return; const moved = drag.moved; drag = null; stage.classList.remove('drag'); if (e.type === 'pointerup') { if (!moved && downHit) hitAction(downHit.dataset.hit); else if (!moved && !downHit) closePanel(); } downHit = null; };
+addEventListener('pointerup', endPtr); addEventListener('pointercancel', endPtr);
 stage.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, cam.s * Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
-stage.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && e.target.dataset.hit) { e.preventDefault(); hitAction(e.target.dataset.hit); } });
-addEventListener('resize', () => fitCam(false));
+stage.addEventListener('keydown', e => { const h = e.target.closest && e.target.closest('[data-hit]'); if ((e.key === 'Enter' || e.key === ' ') && h) { e.preventDefault(); hitAction(h.dataset.hit); } });
+let rsz = 0; addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => fitCam(false), 120); });
 function hitAction(h) { sfx('tap'); if (h === 'tour') return openTour(); if (h === 'phare') return openPhare(); if (h.startsWith('d:')) openDistrict(D.find(d => d.id === h.slice(2))); }
 
 /* ---------- HUD ---------- */
 function renderHUD() {
   const hud = $('#hud'); if (!S.player) { hud.innerHTML = ''; return; }
   const l = lvlOf(S.xp), a = LV[l], b = LV[l + 1] || LV[l] + 1500, pct = clamp((S.xp - a) / (b - a) * 100, 0, 100);
-  const ob = nextObjective();
-  hud.innerHTML = `<div class="card hud-player">${avatar()}<div class="who"><div class="nm">${T(S.player.name)}</div><div class="lvl">NIV. ${l + 1} · ${T(TITLES[l]).toUpperCase()}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="xpt">${nf(S.xp)} / ${nf(b)} XP</div></div></div>
+  const ob = nextObjective(), cp = cityPct();
+  hud.innerHTML = `<div class="hud-left"><div class="card hud-player">${avatar()}<div class="who"><div class="nm">${T(S.player.name)}</div><div class="lvl">NIV. ${l + 1} · ${T(TITLES[l]).toUpperCase()}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="xpt">${nf(S.xp)} / ${nf(b)} XP</div></div></div><button class="card hud-phare" id="hphare" type="button">${ico('house')}<span><b>Le Phare</b><small>Codex · Méthode · Relevé</small></span></button></div>
   ${ob ? `<button class="card hud-obj" id="obj" type="button"><b>OBJECTIF</b><span>${T(ob.txt)}</span>${ico('right')}</button>` : ''}
-  <div class="hud-right"><div class="card stat" title="Écus">${ico('coin')}<span>${nf(S.ecus)}</span></div><div class="card city"><div class="row"><span>AGORIA LIBÉRÉE</span><b>${fr(cityPct() + ' %')}</b></div><div class="bar"><i style="width:${cityPct()}%"></i></div></div></div>
-  <div class="saved ${cloud.ok ? '' : 'local'}" id="saved"></div>
-  <button class="card hud-phare" id="hphare" type="button">${JUNO().replace('<svg', '<svg width="40" height="40"')}<div><div class="ttl">LE PHARE</div><small>Codex · Méthode · Relevé</small></div></button>
-  <div class="hud-tools"><button class="tbtn" id="tsnd" type="button" aria-label="Son">${ico(S.settings.sound ? 'sound' : 'mute')}</button><button class="tbtn" id="tzin" type="button" aria-label="Zoomer">${ico('plus')}</button><button class="tbtn" id="tzout" type="button" aria-label="Dézoomer">${ico('minus')}</button><button class="tbtn" id="tfit" type="button" aria-label="Recentrer">${ico('target')}</button><button class="tbtn" id="thelp" type="button" aria-label="Aide">${ico('help')}</button></div>
-  <div class="card hint-bar">Clique sur un quartier · molette ou + / − pour zoomer · glisse pour te déplacer</div>`;
+  <div class="hud-right"><div class="card stat" title="Écus">${ico('coin')}<span>${nf(S.ecus)}</span></div><div class="card city"><div class="row"><span>AGORIA LIBÉRÉE</span><b>${fr(cp + ' %')}</b></div><div class="bar"><i style="width:${cp}%"></i></div></div></div>
+  <div class="saved" id="saved"></div>
+  <button class="hud-mentor" id="hmentor" type="button" aria-label="Un conseil de ${MENTOR}">${CANO()}<span>MME CANO</span></button>
+  <div class="hud-tools"><button class="tbtn tphare" id="tphare" type="button" aria-label="Le Phare">${ico('house')}</button><button class="tbtn" id="tsnd" type="button" aria-label="Son">${ico(S.settings.sound ? 'sound' : 'mute')}</button><button class="tbtn" id="tzin" type="button" aria-label="Zoomer">${ico('plus')}</button><button class="tbtn" id="tzout" type="button" aria-label="Dézoomer">${ico('minus')}</button><button class="tbtn" id="tfit" type="button" aria-label="Recentrer la carte">${ico('target')}</button><button class="tbtn" id="thelp" type="button" aria-label="Revoir le guide">${ico('help')}</button></div>`;
   saveBadge();
   const o = $('#obj'); if (o) o.onclick = () => { sfx('tap'); if (ob.tour) openTour(); else if (ob.d) openDistrict(ob.d); };
-  $('#hphare').onclick = () => { sfx('tap'); openPhare(); };
+  $('#hphare').onclick = $('#tphare').onclick = () => { sfx('tap'); openPhare(); };
+  $('#hmentor').onclick = () => { sfx('tap'); const tips = CQ.tips; juno([tips[Math.floor(Math.random() * tips.length)]]); };
   $('#tsnd').onclick = () => { S.settings.sound = !S.settings.sound; save(); renderHUD(); sfx('tap'); };
   $('#tzin').onclick = () => zoomAt(innerWidth / 2, innerHeight / 2, cam.s * 1.3, true);
   $('#tzout').onclick = () => zoomAt(innerWidth / 2, innerHeight / 2, cam.s / 1.3, true);
@@ -2781,7 +2939,7 @@ function renderHUD() {
 function saveBadge() { const el = $('#saved'); if (!el) return; el.className = 'saved ' + (cloud.ok ? '' : 'local'); el.textContent = cloud.ok ? '● Sauvegardé sur ton compte' : localOK ? '● Sauvegardé dans ce navigateur' : '● Sauvegarde indisponible : exporte ta progression'; }
 function refreshAll() { renderHUD(); updateMap(false); }
 
-/* ---------- toasts, Juno, dialogues ---------- */
+/* ---------- toasts, Madame Cano, dialogues ---------- */
 function toast(t, k) { const el = document.createElement('div'); el.className = 'toast ' + (k || ''); el.innerHTML = T(t); $('#toasts').appendChild(el); setTimeout(() => el.remove(), 3500); }
 function floatTxt(t, x, y) { const el = document.createElement('div'); el.className = 'float'; el.textContent = t; el.style.left = (x || innerWidth / 2) + 'px'; el.style.top = (y || innerHeight / 2) + 'px'; document.body.appendChild(el); setTimeout(() => el.remove(), 1300); }
 let junoQ = [], junoT = 0;
@@ -2790,13 +2948,13 @@ function junoNext(onDone) {
   const el = $('#juno'); clearTimeout(junoT);
   if (!junoQ.length) { el.className = ''; onDone && onDone(); return; }
   const t = junoQ.shift();
-  el.innerHTML = `<div class="card bubble">${JUNO()}<div><b>Juno</b><p>${M(t)}</p><div class="acts">${junoQ.length ? `<button class="btn small" id="jn" type="button">Suivant</button>` : `<button class="btn small ghost" id="jn" type="button">Compris</button>`}</div></div></div>`;
+  el.innerHTML = `<div class="card bubble">${CANO()}<div><b>${MENTOR}</b><p>${M(t)}</p><div class="acts">${junoQ.length ? `<button class="btn small" id="jn" type="button">Suivant</button>` : `<button class="btn small ghost" id="jn" type="button">Compris</button>`}</div></div></div>`;
   el.className = 'open'; $('#jn').onclick = () => { sfx('tap'); junoNext(onDone); };
   if (!junoQ.length) junoT = setTimeout(() => { el.className = ''; }, 12000);
 }
 function guide(force) {
   const n = S.player ? S.player.name : '';
-  juno([`Bienvenue à Agoria, **${n}** ! Je suis Juno, ta mentore. Le Cartel Vortex a plongé six quartiers dans l’ombre.`, 'Chaque quartier est une **ligne de métro** et correspond à un **thème du programme de CEJM**. Clique sur un quartier pour voir ses stations.', 'Chaque mission validée **rallume un immeuble**. Au terminus, bats le lieutenant du Cartel pour libérer le quartier.', 'Le **Phare**, en bas à gauche, c’est notre QG : le Codex des notions, les fiches méthode, ton relevé de résultats et les réglages.', 'Quand les six lieutenants seront tombés, la **Tour Vortex** s’ouvrira : un BTS blanc complet. À toi de jouer !'], () => { if (!force) { S.flags.guide = true; save(); } });
+  juno([`Bonjour **${n}** ! Je suis **Madame Cano**, ta mentore. Le Cartel Vortex a plongé les six quartiers d’Agoria dans l’ombre.`, 'Chaque quartier est une **ligne de métro** et correspond à un **thème du programme de CEJM**. Clique sur un quartier pour voir ses stations.', 'Chaque mission validée **rallume un immeuble**. Au terminus, bats le lieutenant du Cartel pour libérer le quartier.', 'Le **Phare**, au bord de l’eau, c’est notre QG : le Codex des notions, les fiches méthode, ton relevé de résultats et les réglages. Clique sur moi quand tu veux un conseil pour l’épreuve.', 'Quand les six lieutenants seront tombés, la **Tour Vortex** s’ouvrira : un BTS blanc complet. À toi de jouer !'], () => { if (!force) { S.flags.guide = true; save(); } });
 }
 function dialog(title, text, ok, cancel, danger) {
   return new Promise(res => {
@@ -2809,7 +2967,7 @@ function confetti() { if (S.settings.reduced) return; const c = document.createE
 
 /* ---------- écrans ---------- */
 function openScreen(id, html) { const el = $('#' + id); if (html != null) el.innerHTML = html; el.classList.add('open'); return el; }
-function closeScreen(id) { const el = $('#' + id); el.classList.remove('open'); }
+function closeScreen(id) { const el = $('#' + id); el.classList.remove('open'); if (id === 'modal' || id === 'final') el.innerHTML = ''; }
 addEventListener('keydown', e => {
   if (e.key === 'Escape') { if ($('#dialog').classList.contains('open')) return; if ($('#modal').classList.contains('open')) return quitRun(); for (const id of ['final', 'phare', 'line']) if ($('#' + id).classList.contains('open')) { if (id === 'final' && RUN && RUN.kind === 'final' && !RUN.graded) return quitRun(); closeScreen(id); if (id === 'line') openDistrict(LINE); return; } closePanel(); return; }
   if ($('#modal').classList.contains('open') && !$('#dialog').classList.contains('open') && EXS && EXS.ui) {
@@ -2831,7 +2989,7 @@ function openDistrict(d) {
   <ul class="stations">${st}</ul><button class="btn k wide" id="ptake" type="button">${ico('train')} Prendre la ligne ${d.n}</button>`;
   el.classList.add('open'); el.classList.add('card');
   $('#pclose').onclick = closePanel; $('#ptake').onclick = () => { sfx('open'); openLine(d); };
-  focus(d.pos[0], d.pos[1] - 60, 1.7);
+  focus(d.pos[0], d.pos[1] - 40, 1.5);
 }
 function closePanel() { if (!PANEL) return; PANEL = null; $('#panel').classList.remove('open'); }
 const stars = n => [0, 1, 2].map(i => i < n ? '★' : '<span class="off">★</span>').join('');
@@ -2868,7 +3026,7 @@ function openLine(d) {
 function briefMission(m) {
   const d = m.dist, k = d ? d.color : '#FFB547', s = S.missions[m.id];
   openScreen('modal', `<div class="sheet narrow brief" style="--k:${k}" role="dialog" aria-modal="true"><div class="linebadge"><i>${d ? d.n : '★'}</i>${d ? `LIGNE ${d.n} · STATION ${m.idx + 1}` : 'LE PHARE · ENTRAÎNEMENT'}</div><h3>${T(m.title)}</h3><div class="pq">${T(m.q)}</div>
-  <div class="npc">${d ? portrait(d.npc.look, d.color) : JUNO()}<div><b>${T(d ? d.npc.name : 'Juno')}</b><p>« ${T(m.pitch)} »</p></div></div>
+  <div class="npc">${d ? portrait(d.npc.look, d.color) : CANO()}<div><b>${T(d ? d.npc.name : MENTOR)}</b><p>« ${T(m.pitch)} »</p></div></div>
   <div class="eyebrow">Au programme · ${m.ex.length} exercices</div><ul class="exlist">${m.ex.map(e => `<li>${ico(e.t === 'calc' ? 'chart' : e.t === 'cas' ? 'scale' : e.t === 'redac' ? 'doc' : 'check')}<span>${T(e.title)}</span><span class="tag ${e.d}">${T(TYPE[e.t]).toUpperCase()}</span></li>`).join('')}</ul>
   <div class="rewards"><span class="pill">${ico('bolt')} jusqu’à ${m.ex.length * 30 + 70} XP</span><span class="pill">${ico('coin')} jusqu’à ${m.ex.length * 10 + 50} écus</span>${d ? `<span class="pill">${ico('house')} 1 immeuble rallumé</span>` : ''}${s ? `<span class="pill">Meilleur : <span class="stars">${stars(s.stars)}</span></span>` : ''}</div>
   ${s ? '<p class="kbd" style="margin-bottom:12px">Rejouer une mission validée rapporte moins d’XP, mais peut améliorer tes étoiles.</p>' : ''}
@@ -3006,7 +3164,7 @@ function renderMission() {
 }
 function startEx(ex) {
   EXS = { ex, tries: 0, hint: false, rev: false, done: false };
-  EXS.ui = makeEx(ex, $('#exhost'));
+  EXS.ui = makeEx(ex, $('#modal #exhost'));
   EXS.ui.onchange = updGo; updGo();
   $('#go').onclick = onGo;
   const hb = $('#hint'); if (!ex.h) hb.style.display = 'none'; else hb.onclick = () => { if (EXS.hint || EXS.done) return; if (S.ecus < 15) { toast('Pas assez d’écus pour un indice.'); sfx('ko'); return; } S.ecus -= 15; EXS.hint = true; hb.disabled = true; fb('info', ex.h); renderHUD(); save(); sfx('tap'); };
@@ -3019,7 +3177,7 @@ function onGo() {
   if (r.redac) return showRedac(r);
   if (r.ok === 'step') { sfx('ok'); fb('ok', 'Étape validée. Passe à la suivante.'); updGo(); return; }
   if (r.ok) { sfx('ok'); EXS.ui.reveal(); EXS.ui.lock(); return RUN.kind === 'boss' ? bossHit(true) : solved(false); }
-  EXS.tries++; sfx('ko'); EXS.ui.wrong(); $('.mbody').classList.remove('shake'); void $('.mbody').offsetWidth; $('.mbody').classList.add('shake');
+  EXS.tries++; sfx('ko'); EXS.ui.wrong(); const mb = $('#modal .mbody'); if (mb) { mb.classList.remove('shake'); void mb.offsetWidth; mb.classList.add('shake'); }
   if (RUN.kind === 'boss') return bossHit(false);
   fb('ko', (r.msg ? r.msg + ' ' : '') + (EXS.tries >= 2 ? 'Tu peux réessayer ou consulter la correction.' : 'Réessaie.'), EXS.tries >= 2 ? `<div style="margin-top:8px"><button class="btn ghost small" id="rev" type="button">${ico('eye')} Voir la correction</button></div>` : '');
   const rv = $('#rev'); if (rv) rv.onclick = () => { if (EXS.ex.t === 'cas' && EXS.ui.revealStep) { EXS.rev = true; if (!EXS.ui.revealStep()) { fb('info', 'Étape corrigée. Continue avec la suivante.'); EXS.tries = 0; updGo(); return; } } EXS.rev = true; EXS.ui.reveal(); EXS.ui.lock(); solved(true); };
@@ -3114,9 +3272,9 @@ function renderFinal(docId) {
   openScreen('final', `<div class="sheet" style="width:min(1200px,100%);--k:#FF3355"><div class="mhead"><div class="linebadge" style="--k:#FF3355"><i>V</i></div><div class="grow"><div class="eyebrow">Tour Vortex · BTS blanc · ${mins} min écoulée${mins > 1 ? 's' : ''}</div><h3>${T(ds.title)}</h3></div>${RUN.graded ? `<button class="btn ghost small" id="fx" type="button">${ico('x')} Fermer</button>` : `<button class="btn small" id="fsub" type="button">Rendre ma copie</button><button class="btn ghost small" id="mquit" type="button">${ico('x')}</button>`}</div>
   <div class="exam"><div class="docs"><div class="doctabs">${docs.map((x, k) => `<button class="${x.id === docId ? 'on' : ''} ${ds.docs.includes(x.id) ? 'rel' : ''}" data-doc="${x.id}" type="button" title="${esc(x.title)}">Doc ${k + 1}</button>`).join('')}</div><div class="docview"><h4>${T(doc.title)}</h4><div class="body">${T(doc.body)}</div><small>Source : ${T(doc.src)}</small></div></div>
   <div class="qpane"><div class="qnav">${FQ.map((x, k) => { const g = RUN.graded ? (RUN.score[k] >= 0.999 ? 'good' : 'bad') : (RUN.ans[x.id] != null && RUN.ans[x.id] !== '' && !(Array.isArray(RUN.ans[x.id]) && !RUN.ans[x.id].length) ? 'ans' : ''); return `<button class="${g} ${k === RUN.i ? 'on' : ''}" data-q="${k}" type="button">${k + 1}</button>`; }).join('')}</div><div class="mbody"><div class="exmeta"><span class="eyebrow">Question ${RUN.i + 1} / ${FQ.length} · ${String(q.pts).replace('.', ',')} point${q.pts > 1 ? 's' : ''}</span>${tag(q.d)}</div><div id="exhost"></div><div id="fcorr"></div></div><div class="mfoot"><button class="btn ghost small" id="fprev" type="button" ${RUN.i ? '' : 'disabled'}>${ico('left')} Précédente</button><span class="grow"></span><button class="btn small" id="fnext" type="button" ${RUN.i < FQ.length - 1 ? '' : 'disabled'}>Suivante ${ico('right')}</button></div></div></div></div>`);
-  const ui = makeEx(q, $('#exhost'), true); if (RUN.ans[q.id] != null) ui.set(RUN.ans[q.id]);
+  const ui = makeEx(q, $('#final #exhost'), true); if (RUN.ans[q.id] != null) ui.set(RUN.ans[q.id]);
   ui.onchange = () => { RUN.ans[q.id] = ui.value(); const b = $(`[data-q="${RUN.i}"]`); if (b && !RUN.graded) b.classList.toggle('ans', ui.ready()); };
-  if (q.t === 'calc') $('#exhost input').oninput = () => { RUN.ans[q.id] = ui.value(); const b = $(`[data-q="${RUN.i}"]`); b && b.classList.toggle('ans', ui.ready()); };
+  if (q.t === 'calc') $('#final #exhost input').oninput = () => { RUN.ans[q.id] = ui.value(); const b = $(`[data-q="${RUN.i}"]`); b && b.classList.toggle('ans', ui.ready()); };
   if (RUN.graded) { ui.reveal(); ui.lock(); $('#fcorr').innerHTML = `<div class="fbx ${RUN.score[RUN.i] >= 0.999 ? 'ok' : 'ko'}" style="margin-top:12px">${ico(RUN.score[RUN.i] >= 0.999 ? 'check' : 'x')}<div><b>${String(Math.round(RUN.score[RUN.i] * q.pts * 100) / 100).replace('.', ',')} / ${String(q.pts).replace('.', ',')}</b><div class="corr" style="margin-top:6px"><h4>Correction</h4>${M(q.e)}</div></div></div>`; }
   $$('[data-doc]').forEach(b => b.onclick = () => renderFinal(b.dataset.doc));
   $$('[data-q]').forEach(b => b.onclick = () => { RUN.i = +b.dataset.q; RUN.doc = null; renderFinal(); });
@@ -3130,13 +3288,13 @@ async function submitFinal() {
   const note = Math.round(FQ.reduce((s, q, k) => s + RUN.score[k] * q.pts, 0) * 2) / 2;
   RUN.graded = true; const prevBest = S.final.best; S.final.tries++; S.final.last = note; S.final.best = prevBest == null ? note : Math.max(prevBest, note);
   const firstWin = note >= 10 && !(prevBest >= 10);
-  gain(Math.round(note * 15), note >= 10 && firstWin ? 200 : 0); save(); checkBadges();
+  gain(Math.round(note * 15), note >= 10 && firstWin ? 200 : 0); save(); checkBadges(); renderHUD();
   sfx(note >= 10 ? 'win' : 'ko'); if (note >= 10) confetti();
   const mention = note >= 16 ? 'Très bien' : note >= 14 ? 'Bien' : note >= 12 ? 'Assez bien' : note >= 10 ? 'Passable' : 'Insuffisant';
   openScreen('modal', `<div class="sheet narrow result" style="--k:#FFB547"><div class="eyebrow">Tour Vortex · BTS blanc</div><h3>${String(note).replace('.', ',')} / 20</h3><p class="disp" style="font-size:1.5rem;color:var(--sodium)">${mention}</p><p style="margin-top:8px">${note >= 10 ? (firstWin ? 'Le Baron Vortex s’effondre : **Agoria est libérée** !' : 'Le Baron Vortex ne s’en relève pas.') : 'Le Baron résiste. Relis les corrections question par question, puis retente l’épreuve.'}</p>
   ${note >= 10 ? `<div class="cert"><div class="eyebrow">Certificat</div><h4>${T(S.player.name)}</h4><p>a réussi le BTS blanc de CEJM d’Agoria avec la note de ${String(note).replace('.', ',')} / 20.</p></div>` : ''}
   <div class="row-end" style="justify-content:center"><button class="btn ghost" id="fc" type="button">Voir la correction</button><button class="btn" id="fm" type="button">Retour à la ville</button></div></div>`);
-  $('#fc').onclick = () => { closeScreen('modal'); RUN.i = 0; renderFinal(); };
+  $('#fc').onclick = () => { closeScreen('modal'); RUN.i = 0; RUN.doc = null; renderFinal(); };
   $('#fm').onclick = () => { closeScreen('modal'); closeScreen('final'); RUN = null; renderHUD(); updateMap(true); if (firstWin) { focus(TOUR[0], TOUR[1] - 100, 1.4); juno([`Bravo **${S.player.name}** ! La Tour Vortex est tombée et Agoria brille de nouveau. Tu peux encore viser les 3 étoiles partout et le 20/20.`]); } };
 }
 
@@ -3157,13 +3315,13 @@ const BADGES = [
   ['vortex', 'Tombeur du Vortex', 'Obtenir au moins 10 / 20 au BTS blanc.', 'trophy', () => S.final.best != null && S.final.best >= 10],
   ['twenty', '20 / 20', 'Obtenir la note parfaite au BTS blanc.', 'trophy', () => S.final.best === 20]
 ];
-function checkBadges() { BADGES.forEach(([id, name, , , test]) => { if (!S.badges[id] && test()) { S.badges[id] = Date.now(); setTimeout(() => toast('Badge débloqué : ' + name, 'gold'), 700); } }); }
+function checkBadges() { const got = []; BADGES.forEach(([id, name, , , test]) => { if (!S.badges[id] && test()) { S.badges[id] = Date.now(); got.push(name); } }); if (got.length) setTimeout(() => toast(got.length === 1 ? 'Badge débloqué : ' + got[0] : `${got.length} badges débloqués : ${got.slice(0, 3).join(', ')}${got.length > 3 ? '…' : ''}`, 'gold'), 700); }
 
 /* ---------- Le Phare ---------- */
 function openPhare(tab) {
   closePanel(); tab = tab || 'profil';
   const tabs = [['profil', 'Profil'], ['codex', 'Codex'], ['meth', 'Méthode E3'], ['releve', 'Relevé'], ['reglages', 'Réglages']];
-  openScreen('phare', `<div class="sheet phare" style="width:min(980px,100%)" role="dialog" aria-modal="true"><div class="mhead">${JUNO().replace('<svg', '<svg width="44" height="44"')}<div class="grow"><div class="eyebrow">Quartier général</div><h3>Le Phare</h3></div><button class="btn ghost small" id="phx" type="button">${ico('x')} Fermer</button></div><div class="tabs">${tabs.map(([k, l]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}" type="button">${l}</button>`).join('')}</div><div class="tabbody" id="tabbody"></div></div>`);
+  openScreen('phare', `<div class="sheet phare" style="width:min(980px,100%)" role="dialog" aria-modal="true"><div class="mhead">${CANO().replace('<svg', '<svg width="44" height="44"')}<div class="grow"><div class="eyebrow">Quartier général · avec ${MENTOR}</div><h3>Le Phare</h3></div><button class="btn ghost small" id="phx" type="button">${ico('x')} Fermer</button></div><div class="tabs">${tabs.map(([k, l]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}" type="button">${l}</button>`).join('')}</div><div class="tabbody" id="tabbody"></div></div>`);
   $('#phx').onclick = () => closeScreen('phare');
   $$('[data-tab]').forEach(b => b.onclick = () => { sfx('tap'); openPhare(b.dataset.tab); });
   const tb = $('#tabbody');
@@ -3202,7 +3360,7 @@ function openPhare(tab) {
 /* ---------- intro ---------- */
 function intro() {
   let arch = 'eco', color = COLORS[0];
-  openScreen('intro', `<div class="sheet intro" style="width:min(720px,100%)"><div class="eyebrow">BTS NDRC · Culture économique, juridique et managériale</div><div class="logo" style="margin-top:10px">CEJM Quest<em>Agoria</em></div><p class="story">Agoria, la métropole des échanges, a sombré. Le Cartel Vortex a plongé ses six quartiers dans l’ombre : marchés truqués, contrats falsifiés, données volées, salariés exploités. Tes armes : l’économie, le droit et le management. Reprends la ville, ligne après ligne, jusqu’au BTS blanc final.</p>
+  openScreen('intro', `<div class="sheet intro" style="width:min(720px,100%)"><div class="eyebrow">BTS NDRC · Culture économique, juridique et managériale</div><div class="logo" style="margin-top:10px">CEJM Quest<em>Agoria</em></div><p class="story">Agoria, la métropole des échanges, a sombré. Le Cartel Vortex a plongé ses six quartiers dans l’ombre : marchés truqués, contrats falsifiés, données volées, salariés exploités. Tes armes : l’économie, le droit et le management. Madame Cano, ta mentore, te guidera. Reprends la ville, ligne après ligne, jusqu’au BTS blanc final.</p>
   <div class="field"><label for="pn">Ton pseudo</label><input id="pn" maxlength="20" autocomplete="off" placeholder="Ex. : Badas"></div>
   <div class="field"><label>Ton profil</label><div class="archs">${Object.entries(ARCH).map(([k, a]) => `<button class="arch ${k === arch ? 'on' : ''}" data-a="${k}" type="button">${ico(a[1])}<b>${a[0]}</b><small>${T(a[2])}</small></button>`).join('')}</div></div>
   <div class="field"><label>Ta couleur</label><div class="swatches">${COLORS.map(c => `<button data-c="${c}" class="${c === color ? 'on' : ''}" style="background:${c}" type="button" aria-label="Couleur ${c}"></button>`).join('')}</div></div>
@@ -3218,11 +3376,12 @@ function intro() {
 function start(data) {
   loadLocal(); if (data && data.S && data.S.v === 1 && (data.S.t || 0) >= (S.t || 0)) adopt(data.S);
   document.body.classList.toggle('reduced', !!S.settings.reduced);
-  buildMap(); fitCam(false); updateMap(false); renderHUD();
+  fitCam(false); updateMap(false); renderHUD();
   if (!S.player) intro(); else if (!S.flags.guide) guide(false);
+  try { document.fonts && document.fonts.ready.then(fixSigns); } catch (e) { }
   cloudInit();
   try { window.claude && window.claude.hot && window.claude.hot.snapshot && window.claude.hot.snapshot(() => ({ S })); } catch (e) { }
-  if (window.__CQ_DEBUG) window.__cq = { S: () => S, D, EX, FQ, METH, playMission, playBoss, playFinal, openDistrict, openLine, openPhare, setS: v => { adopt(v); refreshAll(); } };
+  if (window.__CQ_DEBUG) window.__cq = { cur: () => EXS && EXS.ex, run: () => RUN, S: () => S, D, EX, FQ, METH, playMission, playBoss, playFinal, openDistrict, openLine, openPhare, setS: v => { adopt(v); refreshAll(); } };
 }
 const hot = window.claude && window.claude.hot;
 if (hot && typeof hot.ready === 'function') hot.ready(start); else start((hot && hot.data) || {});
