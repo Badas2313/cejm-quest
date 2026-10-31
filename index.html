@@ -557,6 +557,22 @@ body.reduced *{animation:none!important;transition:none!important}
 .mepin .bob{animation:bob 2.6s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(-7px)}}
 .reduced .mepin .bob{animation:none}
+
+/* ---------- musique et voix ---------- */
+.talk{animation:talk .34s ease-in-out infinite alternate;transform-origin:50% 80%}
+@keyframes talk{from{transform:translateY(0) scale(1)}to{transform:translateY(-1.5px) scale(1.045)}}
+.reduced .talk{animation:none}
+#juno .bubble svg.talk,.npc svg.talk{filter:drop-shadow(0 0 8px rgba(255,181,71,.55))}
+#bport svg.talk,.enemy svg.talk,.bosshead svg.talk{filter:drop-shadow(0 0 10px rgba(255,51,85,.6))}
+.audpop{position:fixed;z-index:40;right:72px;bottom:16px;width:min(300px,calc(100% - 90px));padding:14px 16px;border:1px solid var(--rule);display:none;animation:rise .2s}
+.audpop.open{display:block}
+.arow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0}
+.arow span{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.9rem}
+.arow .ico{width:18px;height:18px;color:var(--sodium)}
+.arange{width:100%;margin:2px 0 10px;accent-color:var(--sodium)}
+.anote{font-size:.72rem;margin-top:6px}
+.audset{margin-top:8px;max-width:420px}
+@media (max-width:760px){.audpop{right:64px;bottom:12px}}
 </style>
 </head>
 <body>
@@ -3439,6 +3455,222 @@ body.reduced *{animation:none!important;transition:none!important}
   const uri = (cfg, o) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg(cfg, Object.assign({}, o || {}, { id: (o && o.id) || 'u' })));
   root.CQAvatar = { svg, uri, normalize, random, PRESETS, PAL, LBL, TOP2, DEF, EMO_KEYS: Object.keys(EMO), mix, lum };
 })(typeof window !== 'undefined' ? window : globalThis);
+/* CQMusic — musique d’ambiance générative et apaisante pour CEJM Quest.
+   Tout est synthétisé en direct avec Web Audio : aucun fichier audio, aucune œuvre existante. */
+(function (root) {
+  'use strict';
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  // accords en ré majeur, voicings ouverts et doux (b : basse, p : nappe)
+  const CH = {
+    D: { b: 38, p: [50, 57, 61, 64, 66] },   // Dmaj9
+    Bm: { b: 35, p: [47, 54, 57, 61, 62] },  // Bm9
+    G: { b: 31, p: [43, 50, 54, 57, 59] },   // Gmaj9
+    A: { b: 33, p: [45, 52, 57, 59, 64] },   // Asus2
+    Fm: { b: 42, p: [45, 52, 54, 57, 61] },  // F#m7
+    Em: { b: 40, p: [47, 50, 54, 55, 59] }   // Em9
+  };
+  const PROGS = [['D', 'Bm', 'G', 'A'], ['D', 'Fm', 'G', 'Em'], ['G', 'D', 'Em', 'A'], ['Bm', 'G', 'D', 'A']];
+  const SCALE = [62, 64, 66, 69, 71, 74, 76, 78, 81, 83]; // pentatonique de ré
+  const BPM = 60, STEP = 60 / BPM / 2, BAR = 16;
+
+  function create(getCtx) {
+    let ctx = null, N = null, timer = 0, on = false, step = 0, nextT = 0, prog = PROGS[0], mel = 4, rest = 2;
+    let vol = 0.35, duck = 1, vduck = 1;
+    const R = Math.random;
+    function impulse(sec) {
+      const len = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); let last = 0; for (let i = 0; i < len; i++) { last = last * 0.6 + (R() * 2 - 1) * 0.4; d[i] = last * Math.pow(1 - i / len, 2.8); } }
+      return b;
+    }
+    function brown(sec) {
+      const len = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0); let last = 0;
+      for (let i = 0; i < len; i++) { last = (last + 0.02 * (R() * 2 - 1)) / 1.02; d[i] = last * 3.2; }
+      return b;
+    }
+    function build() {
+      const g = () => ctx.createGain();
+      N = { master: g(), bus: g(), padF: ctx.createBiquadFilter(), bellG: g(), bassG: g(), revIn: g() };
+      N.master.gain.value = 0;
+      const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -22; comp.ratio.value = 2.5; comp.attack.value = 0.08; comp.release.value = 0.5;
+      N.bus.connect(comp); comp.connect(N.master); N.master.connect(ctx.destination);
+      // réverbération longue et sombre
+      const rev = ctx.createConvolver(); rev.buffer = impulse(4.5); const revOut = g(); revOut.gain.value = 0.6;
+      const revTone = ctx.createBiquadFilter(); revTone.type = 'lowpass'; revTone.frequency.value = 3200;
+      N.revIn.connect(rev); rev.connect(revTone); revTone.connect(revOut); revOut.connect(N.bus);
+      // nappe : filtre qui « respire » très lentement
+      N.padF.type = 'lowpass'; N.padF.frequency.value = 1250; N.padF.Q.value = 0.5;
+      const padOut = g(); padOut.gain.value = 0.9; N.padF.connect(padOut); padOut.connect(N.bus);
+      const padSend = g(); padSend.gain.value = 0.55; N.padF.connect(padSend); padSend.connect(N.revIn);
+      const lfo = ctx.createOscillator(), lfoG = g(); lfo.frequency.value = 0.055; lfoG.gain.value = 280; lfo.connect(lfoG); lfoG.connect(N.padF.frequency); lfo.start();
+      // clochettes : écho doux + réverbération
+      N.bellG.gain.value = 0.85; N.bellG.connect(N.bus);
+      const bellSend = g(); bellSend.gain.value = 0.75; N.bellG.connect(bellSend); bellSend.connect(N.revIn);
+      const dl = ctx.createDelay(3), fb = g(), dlf = ctx.createBiquadFilter(), dlOut = g();
+      dl.delayTime.value = STEP * 3; fb.gain.value = 0.3; dlf.type = 'lowpass'; dlf.frequency.value = 2000; dlOut.gain.value = 0.3;
+      N.bellG.connect(dl); dl.connect(dlf); dlf.connect(fb); fb.connect(dl); dlf.connect(dlOut); dlOut.connect(N.bus); dlOut.connect(N.revIn);
+      // basse ronde
+      const bassF = ctx.createBiquadFilter(); bassF.type = 'lowpass'; bassF.frequency.value = 320; N.bassG.gain.value = 1; N.bassG.connect(bassF); bassF.connect(N.bus);
+      // houle lointaine (bruit filtré, très bas)
+      const sea = ctx.createBufferSource(); sea.buffer = brown(6); sea.loop = true;
+      const seaH = ctx.createBiquadFilter(); seaH.type = 'highpass'; seaH.frequency.value = 180; const seaF = ctx.createBiquadFilter(); seaF.type = 'bandpass'; seaF.frequency.value = 520; seaF.Q.value = 0.7;
+      const seaG = g(); seaG.gain.value = 0.018; const seaL = ctx.createOscillator(), seaLG = g(); seaL.frequency.value = 0.04; seaLG.gain.value = 0.014;
+      seaL.connect(seaLG); seaLG.connect(seaG.gain); sea.connect(seaH); seaH.connect(seaF); seaF.connect(seaG); seaG.connect(N.bus); seaG.connect(N.revIn); sea.start(); seaL.start();
+    }
+    function pad(ch, t, dur) {
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0.0001, t); env.gain.linearRampToValueAtTime(0.034, t + 3.2); env.gain.setValueAtTime(0.034, t + dur); env.gain.linearRampToValueAtTime(0.0001, t + dur + 4.6);
+      env.connect(N.padF);
+      ch.p.forEach(m => [-6, 6].forEach((cents, k) => {
+        const o = ctx.createOscillator(), og = ctx.createGain();
+        o.type = k ? 'triangle' : 'sine'; o.frequency.value = mtof(m); o.detune.value = cents + (R() - 0.5) * 5;
+        og.gain.value = k ? 0.32 : 0.68; o.connect(og); og.connect(env); o.start(t); o.stop(t + dur + 4.9);
+      }));
+    }
+    function bass(ch, t, dur) {
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0.0001, t); env.gain.linearRampToValueAtTime(0.038, t + 1.6); env.gain.linearRampToValueAtTime(0.026, t + dur * 0.6); env.gain.linearRampToValueAtTime(0.0001, t + dur + 2.5);
+      env.connect(N.bassG);
+      [[1, 0.7], [2, 0.6]].forEach(([r, a]) => { const o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = mtof(ch.b) * r; og.gain.value = a; o.connect(og); og.connect(env); o.start(t); o.stop(t + dur + 2.7); });
+    }
+    function bell(m, t, v, pan) {
+      const f = mtof(m), env = ctx.createGain(), dur = 2.6 + R() * 1.8;
+      env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(0.16 * v, t + 0.018); env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      let out = env;
+      if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; env.connect(p); out = p; }
+      out.connect(N.bellG);
+      [[1, 1, 1], [2, 0.2, 0.55], [3.01, 0.06, 0.3], [4.17, 0.025, 0.2]].forEach(([r, a, dd]) => {
+        const o = ctx.createOscillator(), og = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f * r; og.gain.setValueAtTime(a, t); if (dd < 1) og.gain.exponentialRampToValueAtTime(0.0001, t + dur * dd);
+        o.connect(og); og.connect(env); o.start(t); o.stop(t + dur + 0.1);
+      });
+    }
+    function sched(s, t) {
+      const bi = Math.floor(s / BAR) % 4;
+      if (s % (BAR * 4) === 0) prog = PROGS[Math.floor(R() * PROGS.length)];
+      if (s % BAR === 0) { const ch = CH[prog[bi]]; pad(ch, t, BAR * STEP); bass(ch, t, BAR * STEP); }
+      if (s % BAR === 8 && R() < 0.45) bell(SCALE[Math.floor(R() * 3)] - 12, t, 0.55, (R() - 0.5) * 0.4);
+      if (rest > 0) { rest--; return; }
+      if (R() < 0.38) {
+        mel = clamp(mel + [-2, -1, -1, 1, 1, 2, 0][Math.floor(R() * 7)], 1, SCALE.length - 1);
+        bell(SCALE[mel], t + (R() - 0.5) * 0.03, 0.5 + R() * 0.45, (R() - 0.5) * 0.7);
+        if (R() < 0.2) rest = 4 + Math.floor(R() * 9);
+      }
+    }
+    const level = () => (on ? Math.pow(vol, 1.4) * 0.85 * duck * vduck : 0);
+    function apply(sec) {
+      if (!N) return;
+      const t = ctx.currentTime, gp = N.master.gain;
+      gp.cancelScheduledValues(t); gp.setValueAtTime(gp.value, t); gp.linearRampToValueAtTime(level(), t + (sec || 0.8));
+    }
+    function tick() { if (!on || !ctx) return; while (nextT < ctx.currentTime + 1.2) { sched(step, nextT); nextT += STEP; step++; } }
+    return {
+      start() {
+        if (!ctx) ctx = getCtx(); if (!ctx) return false;
+        if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+        if (!N) build(); if (on) return true;
+        on = true; step -= step % BAR; nextT = Math.max(nextT, ctx.currentTime + 0.15);
+        tick(); timer = setInterval(tick, 250); apply(4);
+        return true;
+      },
+      stop(sec) { if (!on) return; on = false; clearInterval(timer); timer = 0; apply(sec || 1.2); },
+      volume(v) { vol = clamp(v, 0, 1); apply(0.3); },
+      duck(d) { if (d === duck) return; duck = d; apply(0.9); },
+      voice(d) { if (d === vduck) return; vduck = d; apply(d < 1 ? 0.35 : 1.2); },
+      get playing() { return on; },
+      render(off, seconds) { ctx = off; build(); on = true; N.master.gain.value = level(); while (nextT < seconds) { sched(step, nextT); nextT += STEP; step++; } return off.startRendering(); }
+    };
+  }
+  root.CQMusic = { create };
+})(typeof window !== 'undefined' ? window : globalThis);
+/* CQVoice — voix des personnages.
+   Utilise la synthèse vocale française de l’appareil (gratuite, sans téléchargement) ;
+   si aucune voix française n’existe, chaque personnage « parle » en petites bulles sonores. */
+(function (root) {
+  'use strict';
+  const synth = root.speechSynthesis || null;
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const FEM = /(am[eé]lie|audrey|aur[eé]lie|marie|julie|hortense|denise|c[eé]line|virginie|[eé]lo[iï]se|vivienne|charline|brigitte|coralie|jacqueline|sylvie|ariane|yvette|chantal|juliette|josephine|claire|ma[iï]a|catherine|ana[iï]s|clara|google fran|sandy|shelley|grandma|\bflo\b|female|femme)/i;
+  const MASC = /(thomas|henri|paul|nicolas|r[eé]my|j[eé]r[oô]me|antoine|fabrice|mathieu|claude|guillaume|jean|alain|g[eé]rard|jacques|louis|vincent|olivier|eddy|reed|rocko|grandpa|daniel|male|homme)/i;
+  const NOVELTY = /(eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|bad news|bells|jester|whisper|zarvox|trinoids|organ|bubbles|boing|cellos|albert|fred|junior|kathy|ralph)/i;
+  let all = [], fem = [], masc = [], ready = false, getCtx = null, vol = 0.9, token = 0, blipT = 0, blipOut = null, watch = 0;
+  const score = v => (/natural|neural|premium|enhanced|am[eé]lior|online/i.test(v.name) ? 6 : 0) + (/google/i.test(v.name) ? 3 : 0) + (/fr[-_]FR/i.test(v.lang) ? 2 : 0) + (v.localService ? 1 : 0) - (NOVELTY.test(v.name) ? 8 : 0);
+  function load() {
+    if (!synth) return;
+    try {
+      all = synth.getVoices().filter(v => /^fr/i.test(v.lang)).sort((a, b) => score(b) - score(a));
+      fem = all.filter(v => FEM.test(v.name) && !MASC.test(v.name) && !NOVELTY.test(v.name));
+      masc = all.filter(v => MASC.test(v.name) && !NOVELTY.test(v.name));
+      ready = all.length > 0;
+    } catch (e) { ready = false; }
+  }
+  if (synth) { load(); if (synth.addEventListener) synth.addEventListener('voiceschanged', load); else synth.onvoiceschanged = load; }
+  function pick(g, i) {
+    const list = g === 'm' ? masc : fem;
+    if (list.length) return { v: list[i % list.length], match: true };
+    const other = all.filter(v => !NOVELTY.test(v.name));
+    return { v: other[0] || all[0] || null, match: false };
+  }
+  function clean(t) {
+    return String(t || '').replace(/<[^>]+>/g, ' ').replace(/\*\*|__|[*_`]/g, '').replace(/[«»“”]/g, '')
+      .replace(/\b(CEJM|BTS|NDRC|CSE|RGPD|PME|TPE|SARL|SAS|CDI|CDD|PIB|TVA|BFR|CAF)\b/g, m => m.split('').join(' ')).replace(/\bCNIL\b/g, 'Cnil')
+      .replace(/\bXP\b/g, 'points d’expérience').replace(/(\d+(?:[.,]\d+)?)\s*\/\s*20\b/g, '$1 sur 20').replace(/\s+/g, ' ').trim();
+  }
+  function chunks(t) {
+    const out = []; let cur = '';
+    (t.match(/[^.!?…:;]+[.!?…:;]*\s*/g) || [t]).map(x => x.trim()).filter(Boolean).forEach(s => { if ((cur + ' ' + s).length > 180 && cur) { out.push(cur); cur = s; } else cur = cur ? cur + ' ' + s : s; });
+    if (cur) out.push(cur);
+    return out;
+  }
+  function stop() {
+    token++; clearTimeout(blipT); clearTimeout(watch);
+    if (synth) try { synth.cancel(); } catch (e) { }
+    if (blipOut) { try { blipOut.gain.cancelScheduledValues(0); blipOut.gain.value = 0; } catch (e) { } blipOut = null; }
+  }
+  function blips(text, prof, my, cb) {
+    const ctx = getCtx && getCtx(); if (!ctx) { cb.end && cb.end(); return; }
+    const syl = clamp(Math.round(text.replace(/[^aeiouyàâäéèêëîïôöûüù]/gi, '').length * 0.7), 3, 40);
+    const base = prof.blip || (prof.g === 'm' ? 150 : 290);
+    let t = ctx.currentTime + 0.04;
+    const out = ctx.createGain(), bp = ctx.createBiquadFilter();
+    out.gain.value = 0.55 * vol; bp.type = 'bandpass'; bp.frequency.value = base * 2.6; bp.Q.value = 1.1;
+    bp.connect(out); out.connect(ctx.destination); blipOut = out;
+    for (let i = 0; i < syl; i++) {
+      const o = ctx.createOscillator(), g = ctx.createGain(), f = base * (0.86 + Math.random() * 0.36) * (i === syl - 1 ? 0.84 : 1);
+      o.type = i % 3 ? 'triangle' : 'square';
+      o.frequency.setValueAtTime(f, t); o.frequency.linearRampToValueAtTime(f * 1.07, t + 0.06);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.13, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.075);
+      o.connect(g); g.connect(bp); o.start(t); o.stop(t + 0.09);
+      t += 0.082 + (Math.random() < 0.14 ? 0.13 : 0);
+    }
+    cb.start && cb.start();
+    blipT = setTimeout(() => { if (my === token) { blipOut = null; cb.end && cb.end(); } }, (t - ctx.currentTime) * 1000 + 60);
+  }
+  function say(text, prof, cb) {
+    stop(); cb = cb || {}; prof = prof || {};
+    const my = token, t = clean(text); if (!t) return;
+    if (!(ready && synth)) return blips(t, prof, my, cb);
+    const parts = chunks(t), P = pick(prof.g, prof.i || 0);
+    let i = 0, started = false;
+    const finish = () => { clearTimeout(watch); if (my === token) cb.end && cb.end(); };
+    const next = () => {
+      clearTimeout(watch);
+      if (my !== token) return;
+      if (i >= parts.length) return finish();
+      const s = parts[i++], u = new SpeechSynthesisUtterance(s);
+      if (P.v) { u.voice = P.v; u.lang = P.v.lang; } else u.lang = 'fr-FR';
+      u.pitch = clamp((prof.p || 1) * (P.match ? 1 : prof.g === 'm' ? 0.72 : 1.25), 0.1, 2);
+      u.rate = clamp(prof.r || 1, 0.6, 1.5); u.volume = vol;
+      u.onstart = () => { if (!started) { started = true; cb.start && cb.start(); } };
+      u.onend = next; u.onerror = next;
+      watch = setTimeout(next, 2500 + s.length * 110); // certains navigateurs n’envoient jamais « fin »
+      try { synth.speak(u); } catch (e) { next(); }
+    };
+    setTimeout(next, 70); // laisse le temps à « cancel » de se terminer (Chrome)
+  }
+  function unlock() { if (!synth) return; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); } catch (e) { } load(); }
+  root.CQVoice = { init(fn) { getCtx = fn; }, say, stop, unlock, volume(v) { vol = clamp(v, 0, 1); }, get native() { return ready; }, list: () => all.map(v => v.name + ' · ' + v.lang) };
+})(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script>(function () {
 'use strict';
@@ -3466,6 +3698,8 @@ const IC = {
   x: '<path d="M6 6l12 12M18 6L6 18"/>', left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   sound: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  voice: '<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/>',
   mute: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 5M22 9l-5 5"/>',
   plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
   target: '<circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
@@ -3503,7 +3737,7 @@ const CODEX = {}; CQ.codex.forEach(c => CODEX[c.id] = c);
 
 /* ---------- état & sauvegarde ---------- */
 const KEY = 'cejm-quest-agoria-v1';
-const fresh = () => ({ v: 1, t: 0, player: null, xp: 0, ecus: 50, missions: {}, ex: {}, bosses: {}, final: { best: null, tries: 0, last: null }, codex: {}, badges: {}, redac: 0, settings: { sound: true, reduced: false }, flags: {} });
+const fresh = () => ({ v: 1, t: 0, player: null, xp: 0, ecus: 50, missions: {}, ex: {}, bosses: {}, final: { best: null, tries: 0, last: null }, codex: {}, badges: {}, redac: 0, settings: { sound: true, reduced: false, music: true, voice: true, mvol: 40, vvol: 90 }, flags: {} });
 let S = fresh();
 function adopt(d) { if (!d || d.v !== 1) return false; const f = fresh(); S = Object.assign(f, d); S.settings = Object.assign(fresh().settings, d.settings || {}); S.final = Object.assign(fresh().final, d.final || {}); return true; }
 function loadLocal() { try { const raw = localStorage.getItem(KEY); if (raw) adopt(JSON.parse(raw)); } catch (e) { } }
@@ -3538,7 +3772,8 @@ async function cloudInit() {
 
 /* ---------- son ---------- */
 let AC = null;
-function actx() { if (!S.settings.sound) return null; try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); return AC; } catch (e) { return null; } }
+function audioCtx() { try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); return AC; } catch (e) { return null; } }
+function actx() { return S.settings.sound ? audioCtx() : null; }
 function tone(f, d, type, v, delay, f2) { const a = actx(); if (!a) return; const t = a.currentTime + (delay || 0); const o = a.createOscillator(), g = a.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v || 0.1, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g).connect(a.destination); o.start(t); o.stop(t + d + 0.03); }
 const SFX = {
   tap: () => tone(660, 0.05, 'triangle', 0.04),
@@ -3550,6 +3785,45 @@ const SFX = {
   win: () => [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, 0.32, 'triangle', 0.09, i * 0.11))
 };
 const sfx = n => { try { SFX[n] && SFX[n](); } catch (e) { } };
+
+/* ---------- musique et voix ---------- */
+const MUS = window.CQMusic ? window.CQMusic.create(audioCtx) : null;
+const VOX = window.CQVoice || null; if (VOX) VOX.init(audioCtx);
+let audioOK = false;
+const VOI = {
+  cano: { g: 'f', i: 0, p: 1, r: 1, blip: 270 },
+  d1: { g: 'f', i: 1, p: 1.12, r: 1.05, blip: 330 }, d2: { g: 'f', i: 2, p: 0.95, r: 1, blip: 280 }, d3: { g: 'm', i: 0, p: 0.86, r: 0.95, blip: 140 },
+  d4: { g: 'f', i: 3, p: 1.2, r: 1.1, blip: 370 }, d5: { g: 'm', i: 1, p: 1.04, r: 1.03, blip: 170 }, d6: { g: 'f', i: 4, p: 1.02, r: 0.95, blip: 300 }
+};
+const BOSSV = { d1: { g: 'm', i: 0, p: 0.78, r: 0.97, blip: 112 }, d2: { g: 'm', i: 1, p: 0.68, r: 0.9, blip: 96 }, d3: { g: 'm', i: 2, p: 0.86, r: 1.06, blip: 124 }, d4: { g: 'm', i: 0, p: 0.94, r: 1.12, blip: 140 }, d5: { g: 'm', i: 1, p: 0.62, r: 0.88, blip: 88 }, d6: { g: 'm', i: 2, p: 0.74, r: 0.85, blip: 102 } };
+const setv = (k, dflt) => (S.settings[k] != null ? S.settings[k] : dflt);
+function speak(text, prof, el) {
+  if (!VOX || !setv('voice', true) || !audioOK || document.hidden) return;
+  VOX.say(text, prof, { start: () => { if (el) el.classList.add('talk'); MUS && MUS.voice(0.4); }, end: () => { if (el) el.classList.remove('talk'); MUS && MUS.voice(1); } });
+}
+function hush() { if (VOX) VOX.stop(); $$('.talk').forEach(e => e.classList.remove('talk')); MUS && MUS.voice(1); }
+function applyAudio() {
+  if (MUS) { MUS.volume(setv('mvol', 40) / 100); if (setv('music', true) && audioOK && !document.hidden) MUS.start(); else MUS.stop(); }
+  if (VOX) VOX.volume(setv('vvol', 90) / 100);
+  if (!setv('voice', true)) hush();
+}
+function unlockAudio() { if (audioOK) return; audioOK = true; audioCtx(); if (VOX) VOX.unlock(); applyAudio(); }
+addEventListener('pointerdown', unlockAudio, true); addEventListener('keydown', unlockAudio, true);
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (MUS) MUS.stop(0.4); hush(); } else applyAudio(); });
+function audioPanel(host) {
+  const st = S.settings, sw = (k, ic, lab) => `<div class="arow"><span>${ico(ic)}${lab}</span><button class="switch ${setv(k, true) ? 'on' : ''}" data-au="${k}" type="button" aria-label="${lab}" aria-pressed="${!!setv(k, true)}"></button></div>`;
+  host.innerHTML = sw('music', 'music', 'Musique d’ambiance') + `<input class="arange" type="range" min="0" max="100" step="5" data-av="mvol" value="${setv('mvol', 40)}" aria-label="Volume de la musique">` + sw('voice', 'voice', 'Voix des personnages') + `<input class="arange" type="range" min="0" max="100" step="5" data-av="vvol" value="${setv('vvol', 90)}" aria-label="Volume des voix">` + sw('sound', 'sound', 'Effets sonores') + `<p class="kbd anote">${VOX && VOX.native ? 'Les voix utilisent la synthèse vocale de ton appareil.' : 'Aucune voix française n’a été trouvée sur cet appareil : les personnages parlent en bulles sonores.'}</p>`;
+  host.querySelectorAll('[data-au]').forEach(b => b.onclick = () => { const k = b.dataset.au; st[k] = !setv(k, true); save(); unlockAudio(); applyAudio(); b.classList.toggle('on', !!st[k]); b.setAttribute('aria-pressed', !!st[k]); renderAudioBtn(); if (k === 'voice' && st.voice) speak('Les voix sont activées.', VOI.cano); if (k === 'sound') sfx('tap'); });
+  host.querySelectorAll('[data-av]').forEach(r => { r.oninput = () => { st[r.dataset.av] = +r.value; applyAudio(); }; r.onchange = () => { save(); if (r.dataset.av === 'vvol') speak('Voici le volume des voix.', VOI.cano); }; });
+}
+function renderAudioBtn() { const b = $('#taud'); if (b) b.innerHTML = ico(setv('music', true) || setv('voice', true) || S.settings.sound ? 'sound' : 'mute'); }
+function toggleAudioPop(force) {
+  let el = $('#audpop'); if (!el) { el = document.createElement('div'); el.id = 'audpop'; el.className = 'card audpop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Son, musique et voix'); document.body.appendChild(el); }
+  const open = force != null ? force : !el.classList.contains('open');
+  if (open) audioPanel(el);
+  el.classList.toggle('open', open);
+}
+addEventListener('pointerdown', e => { const el = $('#audpop'); if (el && el.classList.contains('open') && !el.contains(e.target) && !e.target.closest('#taud')) toggleAudioPop(false); });
 
 /* ---------- progression ---------- */
 const mDone = m => !!(S.missions[m.id] && S.missions[m.id].done);
@@ -3911,13 +4185,13 @@ function renderHUD() {
   <div class="hud-right"><div class="card stat" title="Écus">${ico('coin')}<span>${nf(S.ecus)}</span></div><div class="card city"><div class="row"><span>AGORIA LIBÉRÉE</span><b>${fr(cp + ' %')}</b></div><div class="bar"><i style="width:${cp}%"></i></div></div></div>
   <div class="saved" id="saved"></div>
   <button class="hud-mentor" id="hmentor" type="button" aria-label="Un conseil de ${MENTOR}">${CANO()}<span>MME CANO</span></button>
-  <div class="hud-tools"><button class="tbtn tphare" id="tphare" type="button" aria-label="Le Phare">${ico('house')}</button><button class="tbtn" id="tsnd" type="button" aria-label="Son">${ico(S.settings.sound ? 'sound' : 'mute')}</button><button class="tbtn" id="tzin" type="button" aria-label="Zoomer">${ico('plus')}</button><button class="tbtn" id="tzout" type="button" aria-label="Dézoomer">${ico('minus')}</button><button class="tbtn" id="tfit" type="button" aria-label="Recentrer la carte">${ico('target')}</button><button class="tbtn" id="thelp" type="button" aria-label="Revoir le guide">${ico('help')}</button></div>`;
+  <div class="hud-tools"><button class="tbtn tphare" id="tphare" type="button" aria-label="Le Phare">${ico('house')}</button><button class="tbtn" id="taud" type="button" aria-label="Son, musique et voix">${ico(setv('music', true) || setv('voice', true) || S.settings.sound ? 'sound' : 'mute')}</button><button class="tbtn" id="tzin" type="button" aria-label="Zoomer">${ico('plus')}</button><button class="tbtn" id="tzout" type="button" aria-label="Dézoomer">${ico('minus')}</button><button class="tbtn" id="tfit" type="button" aria-label="Recentrer la carte">${ico('target')}</button><button class="tbtn" id="thelp" type="button" aria-label="Revoir le guide">${ico('help')}</button></div>`;
   saveBadge();
   const o = $('#obj'); if (o) o.onclick = () => { sfx('tap'); if (ob.tour) openTour(); else if (ob.d) openDistrict(ob.d); };
   $('#hphare').onclick = $('#tphare').onclick = () => { sfx('tap'); openPhare(); };
   $('#hudav').onclick = () => { sfx('tap'); if (hasAv()) setMood(['sourire', 'clin', 'rire'][Math.floor(Math.random() * 3)], 2500); else creator({}); };
-  $('#hmentor').onclick = () => { sfx('tap'); const tips = CQ.tips; juno([tips[Math.floor(Math.random() * tips.length)]]); };
-  $('#tsnd').onclick = () => { S.settings.sound = !S.settings.sound; save(); renderHUD(); sfx('tap'); };
+  $('#hmentor').onclick = () => { sfx('tap'); unlockAudio(); const tips = CQ.tips; juno([tips[Math.floor(Math.random() * tips.length)]]); };
+  $('#taud').onclick = () => { unlockAudio(); toggleAudioPop(); };
   $('#tzin').onclick = () => zoomAt(innerWidth / 2, innerHeight / 2, cam.s * 1.3, true);
   $('#tzout').onclick = () => zoomAt(innerWidth / 2, innerHeight / 2, cam.s / 1.3, true);
   $('#tfit').onclick = () => { closePanel(); fitCam(true); };
@@ -3933,10 +4207,10 @@ let junoQ = [], junoT = 0;
 function juno(lines, onDone) { junoQ = lines.slice(); junoNext(onDone); }
 function junoNext(onDone) {
   const el = $('#juno'); clearTimeout(junoT);
-  if (!junoQ.length) { el.className = ''; onDone && onDone(); return; }
+  if (!junoQ.length) { el.className = ''; hush(); onDone && onDone(); return; }
   const t = junoQ.shift();
   el.innerHTML = `<div class="card bubble">${CANO()}<div><b>${MENTOR}</b><p>${M(t)}</p><div class="acts">${junoQ.length ? `<button class="btn small" id="jn" type="button">Suivant</button>` : `<button class="btn small ghost" id="jn" type="button">Compris</button>`}</div></div></div>`;
-  el.className = 'open'; $('#jn').onclick = () => { sfx('tap'); junoNext(onDone); };
+  el.className = 'open'; $('#jn').onclick = () => { sfx('tap'); junoNext(onDone); }; speak(t, VOI.cano, $('#juno .bubble svg'));
   if (!junoQ.length) junoT = setTimeout(() => { el.className = ''; }, 12000);
 }
 function guide(force) {
@@ -3953,8 +4227,9 @@ function dialog(title, text, ok, cancel, danger) {
 function confetti() { if (S.settings.reduced) return; const c = document.createElement('div'); c.className = 'confetti'; let h = ''; for (let i = 0; i < 70; i++) h += `<i style="left:${Math.random() * 100}%;background:${COLORS[i % 6]};animation-duration:${1.6 + Math.random() * 1.8}s;animation-delay:${Math.random() * 0.5}s"></i>`; c.innerHTML = h; document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
 
 /* ---------- écrans ---------- */
-function openScreen(id, html) { const el = $('#' + id); if (html != null) el.innerHTML = html; el.classList.add('open'); return el; }
-function closeScreen(id) { const el = $('#' + id); el.classList.remove('open'); if (id === 'modal' || id === 'final') el.innerHTML = ''; }
+const focusMode = () => { if (MUS) MUS.duck(['modal', 'final'].some(k => $('#' + k).classList.contains('open')) ? 0.6 : 1); };
+function openScreen(id, html) { const el = $('#' + id); if (html != null) el.innerHTML = html; el.classList.add('open'); focusMode(); return el; }
+function closeScreen(id) { const el = $('#' + id); el.classList.remove('open'); focusMode(); if (id === 'modal' || id === 'final' || id === 'line') hush(); if (id === 'modal' || id === 'final') el.innerHTML = ''; }
 addEventListener('keydown', e => {
   if (e.key === 'Escape') { if ($('#dialog').classList.contains('open') || $('#creator').classList.contains('open')) return; if ($('#modal').classList.contains('open')) return quitRun(); for (const id of ['final', 'phare', 'line']) if ($('#' + id).classList.contains('open')) { if (id === 'final' && RUN && RUN.kind === 'final' && !RUN.graded) return quitRun(); closeScreen(id); if (id === 'line') openDistrict(LINE); return; } closePanel(); return; }
   if ($('#modal').classList.contains('open') && !$('#dialog').classList.contains('open') && EXS && EXS.ui) {
@@ -3976,9 +4251,10 @@ function openDistrict(d) {
   <ul class="stations">${st}</ul><button class="btn k wide" id="ptake" type="button">${ico('train')} Prendre la ligne ${d.n}</button>`;
   el.classList.add('open'); el.classList.add('card');
   $('#pclose').onclick = closePanel; $('#ptake').onclick = () => { sfx('open'); openLine(d); };
+  speak(d.npc.quote, VOI[d.id], $('#panel .npc svg'));
   focus(d.pos[0], d.pos[1] - 40, 1.5);
 }
-function closePanel() { if (!PANEL) return; PANEL = null; $('#panel').classList.remove('open'); }
+function closePanel() { if (!PANEL) return; PANEL = null; $('#panel').classList.remove('open'); hush(); }
 const stars = n => [0, 1, 2].map(i => i < n ? '★' : '<span class="off">★</span>').join('');
 
 /* ---------- ligne de métro ---------- */
@@ -4019,6 +4295,7 @@ function briefMission(m) {
   ${s ? '<p class="kbd" style="margin-bottom:12px">Rejouer une mission validée rapporte moins d’XP, mais peut améliorer tes étoiles.</p>' : ''}
   <div class="row-end"><button class="btn ghost" id="bno" type="button">Plus tard</button><button class="btn k" id="bgo" type="button">${s ? 'Rejouer' : 'Lancer la mission'} ${ico('right')}</button></div></div>`);
   $('#bno').onclick = () => closeScreen('modal'); $('#bgo').onclick = () => { sfx('open'); playMission(m); };
+  speak(m.pitch, d ? VOI[d.id] : VOI.cano, $('#modal .npc svg'));
 }
 function briefBoss(d) {
   const n = d.bossFight.qs.length;
@@ -4026,6 +4303,7 @@ function briefBoss(d) {
   <p style="margin-bottom:10px">${T(d.bossFight.intro)}</p><ul class="exlist"><li>${ico('bolt')}${n} questions sur tout le thème ${d.n}</li><li>${ico('shield')}3 boucliers : chaque erreur en coûte un, et la question revient plus tard</li><li>${ico('trophy')}Victoire : le quartier est libéré (+150 XP, +80 écus)</li></ul>
   <div class="row-end"><button class="btn ghost" id="bno" type="button">Plus tard</button><button class="btn danger" id="bgo" type="button">Affronter ${ico('right')}</button></div></div>`);
   $('#bno').onclick = () => closeScreen('modal'); $('#bgo').onclick = () => { sfx('open'); playBoss(d); };
+  speak(d.boss.taunts[0], BOSSV[d.id], $('#modal .bosshead svg'));
 }
 
 /* ---------- composants d’exercice ---------- */
@@ -4148,6 +4426,7 @@ function renderMission() {
   $('.exmeta').innerHTML = `<span class="eyebrow">Exercice ${RUN.i + 1} / ${RUN.list.length}</span>${tag(ex.d)}<span class="tag meth">${T(TYPE[ex.t]).toUpperCase()}</span>${bonus(ex.d) ? '<span class="pill">+20 % XP</span>' : ''}`;
   startEx(ex);
   $('#mquit').onclick = quitRun;
+  if (d && RUN.i === 0) speak(d.boss.taunts[0], BOSSV[d.id], $('#modal .enemy svg'));
 }
 function startEx(ex) {
   EXS = { ex, tries: 0, hint: false, rev: false, done: false };
@@ -4204,6 +4483,7 @@ function finishMission() {
   <ul class="reslist">${RUN.res.map(r => `<li>${r.first ? `<span class="good">${ico('check')}</span>` : r.rev ? `<span class="bad">${ico('eye')}</span>` : `<span class="meh">${ico('bulb')}</span>`}<span>${T(r.ex.title)}</span><span class="s ${r.first ? 'good' : r.rev ? 'bad' : 'meh'}">${r.first ? 'du premier coup' : r.rev ? 'correction consultée' : (r.tries ? r.tries + ' erreur' + (r.tries > 1 ? 's' : '') : '') + (r.hint ? (r.tries ? ' · ' : '') + 'indice' : '')}</span></li>`).join('')}</ul>
   <div class="row-end" style="justify-content:center">${d ? `<button class="btn ghost" id="rline" type="button">${ico('train')} Retour à la ligne</button>` : `<button class="btn ghost" id="rline" type="button">Retour au Phare</button>`}${nxt ? `<button class="btn k" id="rnext" type="button">Station suivante ${ico('right')}</button>` : d && bossUnlocked(d) && !bWon(d) ? `<button class="btn danger" id="rboss" type="button">Affronter ${T(d.boss.name)} ${ico('right')}</button>` : ''}</div></div>`);
   RUN = null; EXS = null; renderHUD(); updateMap(true);
+  speak(st === 3 ? 'Mission accomplie, sans faute et sans indice : du travail de pro.' : st === 2 ? 'Mission accomplie. Presque parfait : rejoue pour décrocher la troisième étoile.' : 'Mission validée. Relis les corrections, puis rejoue pour progresser.', VOI.cano);
   $('#rline').onclick = () => { closeScreen('modal'); if (d) openLine(d); else openPhare('meth'); };
   const rn = $('#rnext'); if (rn) rn.onclick = () => briefMission(nxt);
   const rb = $('#rboss'); if (rb) rb.onclick = () => briefBoss(d);
@@ -4217,15 +4497,16 @@ async function quitRun() {
 /* ---------- boss ---------- */
 function playBoss(d) { const qs = d.bossFight.qs; RUN = { kind: 'boss', d, list: qs, queue: shuffle(qs.map((_, i) => i)), hp: 100, dmg: 100 / qs.length, shields: 3, errs: 0, firstWin: !bWon(d), xp0: S.xp, ec0: S.ecus, i: 0 }; renderBoss(); }
 function renderBoss(say) {
-  const d = RUN.d, q = d.bossFight.qs[RUN.queue[0]];
-  openScreen('modal', `<div class="sheet mission" style="--k:${d.color}" role="dialog" aria-modal="true"><div class="bosshead"><div id="bport">${portrait('', d.color, true)}</div><div class="bosshp"><div class="eyebrow" style="color:#FF8FA1">Terminus · ligne ${d.n}</div><h3>${T(d.boss.name)}</h3><div class="say">« ${T(say || d.boss.taunts[Math.floor(Math.random() * d.boss.taunts.length)])} »</div><div class="bar" style="margin-top:8px"><i id="bhp" style="width:${RUN.hp}%"></i></div><div class="shields">${[0, 1, 2].map(i => ico('shield', i < RUN.shields ? 'fill' : 'fill off')).join('')}<span class="kbd" style="margin-left:6px">${RUN.queue.length} question${RUN.queue.length > 1 ? 's' : ''} restante${RUN.queue.length > 1 ? 's' : ''}</span></div></div>${hasAv() ? `<div class="vsme" id="vsme">${avatar(RUN.lastEmo || 'determine', 76)}<small>${T(S.player.name)}</small></div>` : ''}<button class="btn ghost small" id="mquit" type="button">${ico('x')}</button></div><div class="mbody"><div class="exmeta">${tag(q.d)}<span class="tag meth">${T(TYPE[q.t]).toUpperCase()}</span></div><div id="exhost"></div></div><div class="fb" id="fb"></div><div class="mfoot"><button class="btn ghost small" id="hint" type="button" style="display:none"></button><span class="grow kbd">Pas d’indice face à un lieutenant</span><button class="btn danger" id="go" type="button" disabled>Frapper</button></div></div>`);
+  const d = RUN.d, q = d.bossFight.qs[RUN.queue[0]], line = say || d.boss.taunts[Math.floor(Math.random() * d.boss.taunts.length)];
+  openScreen('modal', `<div class="sheet mission" style="--k:${d.color}" role="dialog" aria-modal="true"><div class="bosshead"><div id="bport">${portrait('', d.color, true)}</div><div class="bosshp"><div class="eyebrow" style="color:#FF8FA1">Terminus · ligne ${d.n}</div><h3>${T(d.boss.name)}</h3><div class="say">« ${T(line)} »</div><div class="bar" style="margin-top:8px"><i id="bhp" style="width:${RUN.hp}%"></i></div><div class="shields">${[0, 1, 2].map(i => ico('shield', i < RUN.shields ? 'fill' : 'fill off')).join('')}<span class="kbd" style="margin-left:6px">${RUN.queue.length} question${RUN.queue.length > 1 ? 's' : ''} restante${RUN.queue.length > 1 ? 's' : ''}</span></div></div>${hasAv() ? `<div class="vsme" id="vsme">${avatar(RUN.lastEmo || 'determine', 76)}<small>${T(S.player.name)}</small></div>` : ''}<button class="btn ghost small" id="mquit" type="button">${ico('x')}</button></div><div class="mbody"><div class="exmeta">${tag(q.d)}<span class="tag meth">${T(TYPE[q.t]).toUpperCase()}</span></div><div id="exhost"></div></div><div class="fb" id="fb"></div><div class="mfoot"><button class="btn ghost small" id="hint" type="button" style="display:none"></button><span class="grow kbd">Pas d’indice face à un lieutenant</span><button class="btn danger" id="go" type="button" disabled>Frapper</button></div></div>`);
   $('#mquit').onclick = quitRun; startEx(q);
+  speak(line, BOSSV[d.id], $('#bport svg'));
 }
 function bossHit(ok) {
   const d = RUN.d, q = EXS.ex; EXS.done = true; EXS.ui.reveal(); EXS.ui.lock();
   const me = $('#vsme'), emo = ok ? (RUN.hp - RUN.dmg <= 0.01 ? 'rire' : 'sourire') : RUN.shields > 1 ? 'surpris' : 'decu'; RUN.lastEmo = ok ? 'determine' : 'decu';
   if (me) { me.firstChild.outerHTML = avatar(emo, 76); me.classList.remove('pop'); void me.offsetWidth; me.classList.add('pop'); } setMood(emo, 3500);
-  if (ok) { RUN.hp = Math.max(0, RUN.hp - RUN.dmg); RUN.queue.shift(); record(q, true, 0, 0, true); (q.n || []).forEach(n => S.codex[n] = true); sfx('hit'); const p = $('#bport'); p.classList.remove('hurt'); void p.offsetWidth; p.classList.add('hurt'); $('#bhp').style.width = RUN.hp + '%'; gain(bonus(q.d) ? 24 : 20, 0, $('#go')); fb('ok', `**${d.boss.hurt[Math.floor(Math.random() * d.boss.hurt.length)]}**`, corrHTML(q), emo); }
+  if (ok) { RUN.hp = Math.max(0, RUN.hp - RUN.dmg); RUN.queue.shift(); record(q, true, 0, 0, true); (q.n || []).forEach(n => S.codex[n] = true); sfx('hit'); const p = $('#bport'); p.classList.remove('hurt'); void p.offsetWidth; p.classList.add('hurt'); $('#bhp').style.width = RUN.hp + '%'; gain(bonus(q.d) ? 24 : 20, 0, $('#go')); const hl = d.boss.hurt[Math.floor(Math.random() * d.boss.hurt.length)]; fb('ok', `**${hl}**`, corrHTML(q), emo); speak(hl, BOSSV[d.id], $('#bport svg')); }
   else { RUN.shields--; RUN.errs++; record(q, false, 1, 0, false); RUN.queue.push(RUN.queue.shift()); fb('ko', `Bouclier perdu ! ${RUN.shields ? 'La question reviendra plus tard.' : ''}`, corrHTML(q), emo); $$('.shields .ico')[RUN.shields] && $$('.shields .ico')[RUN.shields].classList.add('off'); }
   save(); renderHUD();
   const go = $('#go'); go.disabled = false; go.innerHTML = RUN.hp <= 0.01 ? `Achever ${ico('right')}` : RUN.shields <= 0 ? 'Voir le bilan' : `Question suivante ${ico('right')}`; go.focus();
@@ -4238,13 +4519,13 @@ function bossEnd(won) {
     if (RUN.firstWin) gain(150, 80); save(); checkBadges(); sfx('win'); confetti();
     setMood('rire', 6000);
     openScreen('modal', `<div class="sheet narrow result" style="--k:${d.color}">${hasAv() ? `<div class="resav">${bust('rire', 150)}</div>` : ''}<div class="eyebrow">Ligne ${d.n} · terminus</div><h3>${T(d.name)} est libéré</h3><p style="margin:10px 0;font-family:var(--f-mono);color:#FFB3C1">« ${T(d.boss.defeat)} »</p><div class="rewards" style="justify-content:center"><span class="pill">${ico('bolt')} +${S.xp - RUN.xp0} XP</span><span class="pill">${ico('coin')} +${S.ecus - RUN.ec0} écus</span><span class="pill">${ico('shield')} ${RUN.shields} bouclier${RUN.shields > 1 ? 's' : ''} restant${RUN.shields > 1 ? 's' : ''}</span></div><p class="kbd">${RUN.errs ? 'Rejoue le combat sans perdre de bouclier pour décrocher la victoire parfaite.' : 'Victoire parfaite !'}</p><div class="row-end" style="justify-content:center;margin-top:16px"><button class="btn k" id="rcity" type="button">Voir le quartier s’illuminer ${ico('right')}</button></div></div>`);
-    RUN = null; EXS = null;
+    RUN = null; EXS = null; speak(d.boss.defeat, BOSSV[d.id]);
     $('#rcity').onclick = () => { closeScreen('modal'); closeScreen('line'); renderHUD(); focus(d.pos[0], d.pos[1] - 60, 1.6); setTimeout(() => updateMap(true), 450); toast(`${d.name} est libéré !`, 'gold'); if (finalUnlocked()) setTimeout(() => juno(['Les six lieutenants sont tombés ! La **Tour Vortex** est ouverte : un BTS blanc complet t’y attend.']), 1400); };
   } else {
     sfx('ko');
     setMood('determine', 6000);
     openScreen('modal', `<div class="sheet narrow result" style="--k:${d.color}">${hasAv() ? `<div class="resav">${bust('decu', 150)}</div>` : ''}<div class="eyebrow">Ligne ${d.n} · terminus</div><h3>Repli stratégique</h3><p>${T(d.boss.name)} a brisé tes trois boucliers. Relis les corrections et retente ta chance : les questions sont mélangées à chaque combat.</p><div class="row-end" style="justify-content:center;margin-top:16px"><button class="btn ghost" id="rl" type="button">Retour à la ligne</button><button class="btn danger" id="rr" type="button">Réessayer</button></div></div>`);
-    RUN = null; EXS = null; $('#rl').onclick = () => { closeScreen('modal'); openLine(d); }; $('#rr').onclick = () => playBoss(d);
+    RUN = null; EXS = null; speak(`${d.boss.name} a brisé tes trois boucliers. Relis les corrections et retente ta chance : les questions sont mélangées à chaque combat.`, VOI.cano); $('#rl').onclick = () => { closeScreen('modal'); openLine(d); }; $('#rr').onclick = () => playBoss(d);
   }
   updateMap(false);
 }
@@ -4256,6 +4537,7 @@ function openTour() {
   const F = CQ.final;
   openScreen('modal', `<div class="sheet narrow brief" style="--k:#FF3355"><div class="linebadge" style="--k:#FF3355"><i>V</i>TOUR VORTEX · ÉPREUVE FINALE</div><h3>${T(F.title)}</h3><p style="margin:8px 0 12px">${T(F.intro)}</p><div class="doc"><b>La situation</b>${T(F.company)}</div><ul class="exlist">${F.dossiers.map(ds => `<li>${ico('doc')}${T(ds.title)}<span class="tag meth">${ds.qs.length} QUESTIONS</span></li>`).join('')}</ul><div class="rewards"><span class="pill">${ico('trophy')} 10 / 20 pour vaincre le Baron</span>${S.final.best != null ? `<span class="pill">Meilleure note : ${String(S.final.best).replace('.', ',')} / 20</span>` : ''}</div><div class="row-end"><button class="btn ghost" id="bno" type="button">Plus tard</button><button class="btn danger" id="bgo" type="button">Commencer l’épreuve ${ico('right')}</button></div></div>`);
   $('#bno').onclick = () => closeScreen('modal'); $('#bgo').onclick = () => { closeScreen('modal'); sfx('open'); playFinal(); };
+  speak(F.intro, VOI.cano);
 }
 function playFinal() { RUN = { kind: 'final', i: 0, ans: {}, t0: Date.now(), graded: false, uis: {} }; renderFinal(); }
 function renderFinal(docId) {
@@ -4288,6 +4570,7 @@ async function submitFinal() {
   ${note < 10 && hasAv() ? `<div class="resav">${bust('determine', 140)}</div>` : ''}${note >= 10 ? `<div class="cert">${hasAv() ? `<div class="certav">${bust('rire', 120)}</div>` : ''}<div class="eyebrow">Certificat</div><h4>${T(S.player.name)}</h4><p>a réussi le BTS blanc de CEJM d’Agoria avec la note de ${String(note).replace('.', ',')} / 20.</p></div>` : ''}
   <div class="row-end" style="justify-content:center"><button class="btn ghost" id="fc" type="button">Voir la correction</button><button class="btn" id="fm" type="button">Retour à la ville</button></div></div>`);
   $('#fc').onclick = () => { closeScreen('modal'); RUN.i = 0; RUN.doc = null; renderFinal(); };
+  speak(`${String(note).replace('.', ',')} sur 20, mention ${mention}. ${note >= 10 ? (firstWin ? 'Le Baron Vortex s’effondre : Agoria est libérée !' : 'Le Baron Vortex ne s’en relève pas.') : 'Le Baron résiste. Relis les corrections question par question, puis retente l’épreuve.'}`, VOI.cano);
   $('#fm').onclick = () => { closeScreen('modal'); closeScreen('final'); RUN = null; renderHUD(); updateMap(true); if (firstWin) { focus(TOUR[0], TOUR[1] - 100, 1.4); juno([`Bravo **${S.player.name}** ! La Tour Vortex est tombée et Agoria brille de nouveau. Tu peux encore viser les 3 étoiles partout et le 20/20.`]); } };
 }
 
@@ -4338,11 +4621,11 @@ function openPhare(tab) {
     const rows = Object.keys(S.ex).map(id => [id, EX[id], S.ex[id]]).filter(r => r[1]);
     tb.innerHTML = rows.length ? `<p class="kbd" style="margin-bottom:8px">Chaque exercice : réussites, erreurs, aides (indices et corrections consultées).</p><div style="overflow-x:auto"><table class="rel"><thead><tr><th>Exercice</th><th>Ligne</th><th>OK</th><th>Erreurs</th><th>Aides</th><th>1er coup</th></tr></thead><tbody>${rows.map(([id, e, r]) => { const dn = id.startsWith('meth') ? 'Phare' : 'L' + id.charAt(1); return `<tr><td>${T(e.title)}</td><td class="n">${dn}</td><td class="n">${r.ok}</td><td class="n ${r.ko ? 'bad' : ''}">${r.ko}</td><td class="n ${r.aide ? 'meh' : ''}">${r.aide}</td><td class="n">${r.first ? '<span class="good">✓</span>' : '–'}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="kbd">Aucun exercice pour l’instant. Ton relevé se remplira au fil des missions.</p>';
   } else if (tab === 'reglages') {
-    tb.innerHTML = `<div class="set"><div><b>Son</b><p class="kbd">Effets sonores du jeu</p></div><button class="switch ${S.settings.sound ? 'on' : ''}" id="ss" type="button" aria-label="Son"></button></div><div class="set"><div><b>Animations réduites</b><p class="kbd">Supprime les animations et les transitions</p></div><button class="switch ${S.settings.reduced ? 'on' : ''}" id="sr" type="button" aria-label="Animations réduites"></button></div>
+    tb.innerHTML = `<div class="set" style="display:block"><b>Son, musique et voix</b><div class="audset" id="audset"></div></div><div class="set"><div><b>Animations réduites</b><p class="kbd">Supprime les animations et les transitions</p></div><button class="switch ${S.settings.reduced ? 'on' : ''}" id="sr" type="button" aria-label="Animations réduites"></button></div>
     <div class="set"><div><b>Pseudo</b></div><div style="display:flex;gap:6px"><input class="search" id="sn" style="width:180px" maxlength="20" value="${esc(S.player.name)}" aria-label="Pseudo"><button class="btn small" id="snok" type="button">OK</button></div></div>
     <div class="set" style="display:block"><b>Sauvegarde</b><p class="kbd" style="margin:4px 0 10px">${cloud.ok ? 'Ta progression est enregistrée sur ton compte et dans ce navigateur.' : 'Ta progression est enregistrée dans ce navigateur. Pour la transférer sur un autre appareil, copie ce code puis colle-le là-bas.'}</p><textarea id="exp" style="min-height:70px;font-family:var(--f-mono);font-size:.72rem" aria-label="Code de sauvegarde"></textarea><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn small" id="cpy" type="button">${ico('copy')} Copier mon code</button><button class="btn small ghost" id="imp" type="button">Importer le code collé</button><button class="btn small danger" id="rst" type="button" style="margin-left:auto">Tout recommencer</button></div></div>`;
     const code = btoa(unescape(encodeURIComponent(JSON.stringify(S)))); $('#exp').value = code;
-    $('#ss').onclick = () => { S.settings.sound = !S.settings.sound; save(); openPhare('reglages'); renderHUD(); };
+    audioPanel($('#audset'));
     $('#sr').onclick = () => { S.settings.reduced = !S.settings.reduced; document.body.classList.toggle('reduced', S.settings.reduced); save(); openPhare('reglages'); };
     $('#snok').onclick = () => { const v = $('#sn').value.trim().slice(0, 20); if (v) { S.player.name = v; save(); renderHUD(); toast('Pseudo modifié', 'green'); } };
     $('#cpy').onclick = async () => { try { await navigator.clipboard.writeText(code); toast('Code copié', 'green'); } catch (e) { $('#exp').select(); toast('Sélectionne le code et copie-le (Ctrl+C).'); } };
@@ -4380,7 +4663,7 @@ function start(data) {
   try { document.fonts && document.fonts.ready.then(fixSigns); } catch (e) { }
   cloudInit();
   try { window.claude && window.claude.hot && window.claude.hot.snapshot && window.claude.hot.snapshot(() => ({ S })); } catch (e) { }
-  if (window.__CQ_DEBUG) window.__cq = { cur: () => EXS && EXS.ex, run: () => RUN, S: () => S, D, EX, FQ, METH, playMission, playBoss, playFinal, openDistrict, openLine, openPhare, setS: v => { adopt(v); refreshAll(); } };
+  if (window.__CQ_DEBUG) window.__cq = { mus: () => !!(MUS && MUS.playing), ac: () => AC && AC.state, vox: () => VOX && VOX.native, cur: () => EXS && EXS.ex, run: () => RUN, S: () => S, D, EX, FQ, METH, playMission, playBoss, playFinal, openDistrict, openLine, openPhare, setS: v => { adopt(v); refreshAll(); } };
 }
 const hot = window.claude && window.claude.hot;
 if (hot && typeof hot.ready === 'function') hot.ready(start); else start((hot && hot.data) || {});
