@@ -3697,10 +3697,17 @@ const sfx = n => { try { SFX[n] && SFX[n](); } catch (e) { } };
 const MUS = window.CQMusic ? window.CQMusic.create(audioCtx) : null;
 const setv = (k, dflt) => (S.settings[k] != null ? S.settings[k] : dflt);
 function applyAudio() { if (!MUS) return; MUS.volume(setv('mvol', 40) / 100); if (setv('music', true) && !document.hidden) MUS.start(); else MUS.stop(); }
-const UNLOCK = ['pointerdown', 'touchend', 'click', 'keydown'];
-function unlockAudio() { const a = audioCtx(); if (a && a.state === 'running') UNLOCK.forEach(ev => removeEventListener(ev, unlockAudio, true)); applyAudio(); }
-UNLOCK.forEach(ev => addEventListener(ev, unlockAudio, true));
-document.addEventListener('visibilitychange', () => { if (document.hidden) { if (MUS) MUS.stop(0.4); } else applyAudio(); });
+// Les navigateurs n’autorisent le son qu’après un geste, et iOS coupe l’audio quand on change d’appli :
+// à chaque toucher, clic ou touche, on relance l’audio s’il a été mis en pause (carte, menus, partout).
+function unlockAudio() {
+  if (!setv('music', true) && !S.settings.sound) return;
+  const a = audioCtx();
+  if (a && a.state !== 'running') { try { const r = a.resume(); if (r && r.catch) r.catch(() => { }); } catch (e) { } }
+  if (setv('music', true) && MUS && !MUS.playing && !document.hidden) applyAudio();
+}
+['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'].forEach(ev => addEventListener(ev, unlockAudio, { capture: true, passive: true }));
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (MUS) MUS.stop(0.4); } else { unlockAudio(); applyAudio(); } });
+addEventListener('pageshow', () => applyAudio());
 function audioPanel(host) {
   const st = S.settings, sw = (k, ic, lab) => `<div class="arow"><span>${ico(ic)}${lab}</span><button class="switch ${setv(k, true) ? 'on' : ''}" data-au="${k}" type="button" aria-label="${lab}" aria-pressed="${!!setv(k, true)}"></button></div>`;
   host.innerHTML = sw('music', 'music', 'Musique d’ambiance') + `<input class="arange" type="range" min="0" max="100" step="5" data-av="mvol" value="${setv('mvol', 40)}" aria-label="Volume de la musique">` + sw('sound', 'sound', 'Effets sonores');
@@ -4546,7 +4553,7 @@ function start(data) {
   try { document.fonts && document.fonts.ready.then(fixSigns); } catch (e) { }
   cloudInit();
   try { window.claude && window.claude.hot && window.claude.hot.snapshot && window.claude.hot.snapshot(() => ({ S })); } catch (e) { }
-  if (window.__CQ_DEBUG) window.__cq = { mus: () => !!(MUS && MUS.playing), ac: () => AC && AC.state, cur: () => EXS && EXS.ex, run: () => RUN, S: () => S, D, EX, FQ, METH, playMission, playBoss, playFinal, openDistrict, openLine, openPhare, setS: v => { adopt(v); refreshAll(); } };
+  if (window.__CQ_DEBUG) window.__cq = { mus: () => !!(MUS && MUS.playing), ac: () => AC && AC.state, acObj: () => AC, cur: () => EXS && EXS.ex, run: () => RUN, S: () => S, D, EX, FQ, METH, playMission, playBoss, playFinal, openDistrict, openLine, openPhare, setS: v => { adopt(v); refreshAll(); } };
 }
 const hot = window.claude && window.claude.hot;
 if (hot && typeof hot.ready === 'function') hot.ready(start); else start((hot && hot.data) || {});
